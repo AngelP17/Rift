@@ -36,4 +36,11 @@ def random_split(
     seed: int = 7,
 ) -> DatasetSplit:
     shuffled = frame.sample(fraction=1.0, shuffle=True, seed=seed)
-    return chronological_split(shuffled, train_ratio=train_ratio, validation_ratio=validation_ratio)
+    n_rows = shuffled.height
+    train_end = math.floor(n_rows * train_ratio)
+    validation_end = math.floor(n_rows * (train_ratio + validation_ratio))
+    return DatasetSplit(
+        train=shuffled.slice(0, train_end),
+        validation=shuffled.slice(train_end, validation_end - train_end),
+        test=shuffled.slice(validation_end),
+    )

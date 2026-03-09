@@ -119,10 +119,13 @@ def export(since: int = typer.Option(90), format: str = typer.Option("markdown")
     conn = duckdb.connect(str(paths.audit_db), read_only=True)
     rows = conn.execute(
         """
-        select decision_id, markdown, report_json
-        from audit_reports
-        order by decision_id
-        """
+        select ar.decision_id, ar.markdown, ar.report_json
+        from audit_reports ar
+        join transactions t on ar.decision_id = t.decision_id
+        where t.created_at >= current_timestamp - make_interval(days := ?)
+        order by ar.decision_id
+        """,
+        [since],
     ).fetchall()
     conn.close()
     if format == "json":

@@ -9,7 +9,7 @@ import numpy as np
 import polars as pl
 
 from rift.data.splits import DatasetSplit, chronological_split, random_split
-from rift.features.engine import build_features, feature_columns
+from rift.features.engine import build_features, extract_categorical_mappings, feature_columns
 from rift.graph.builder import build_transaction_graph
 from rift.models.baseline_xgb import TabularXGBoostModel
 from rift.models.calibrate import ProbabilityCalibrator
@@ -49,6 +49,7 @@ def train_from_frame(
     calibration_method: str = "isotonic",
 ) -> ModelRunSummary:
     feat = build_features(frame)
+    categorical_mappings = extract_categorical_mappings(feat)
     split = _split_frame(feat, time_split=time_split)
     columns = feature_columns(feat)
     train_x = _select(split.train, columns)
@@ -106,6 +107,7 @@ def train_from_frame(
     }
     artifact["calibrator"] = calibrator
     artifact["conformal"] = conformal
+    artifact["categorical_mappings"] = categorical_mappings
     artifact["train_reference"] = {
         "features": train_x[:500].tolist(),
         "labels": train_y[:500].tolist(),

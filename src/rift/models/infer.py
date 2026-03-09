@@ -35,7 +35,7 @@ def payload_to_frame(payload: dict[str, Any]) -> pl.DataFrame:
 
 
 def score_frame(frame: pl.DataFrame, artifact: dict[str, Any]) -> tuple[dict[str, Any], pl.DataFrame]:
-    feature_frame = build_features(frame)
+    feature_frame = build_features(frame, categorical_mappings=artifact.get("categorical_mappings"))
     columns = artifact["feature_columns"]
     matrix = _select(feature_frame, columns)
     model_type = artifact["model_type"]
