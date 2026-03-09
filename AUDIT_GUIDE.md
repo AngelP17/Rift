@@ -53,6 +53,32 @@ Confidence in Rift is not just the raw model score. It combines:
 
 The MVP stores synthetic data by default. When real data is used, personal information should be redacted before export. The audit export functions are structured so sensitive fields can be filtered before they leave the audit store.
 
+## How source provenance is tracked
+
+Rift now includes an ETL lineage layer for raw operational data.
+
+```mermaid
+flowchart LR
+    A[Raw Source File] --> B[Bronze Snapshot]
+    A --> C[Silver Canonical Transactions]
+    C --> D[Gold Features]
+    B --> E[DuckDB ETL Warehouse]
+    C --> E
+    D --> E
+    E --> F[Lineage Manifest]
+    F --> G[Training and Audit Workflows]
+```
+
+For each ETL run, Rift stores:
+
+- the source path and source system;
+- extracted, valid, invalid, and loaded row counts;
+- bronze, silver, and gold artifact paths;
+- a lineage manifest JSON file;
+- warehouse status in DuckDB.
+
+Sensitive fields such as names, email addresses, and taxpayer identifiers are hashed before the silver layer is written.
+
 ## What is currently stored
 
 The MVP stores decision records in DuckDB tables for:
@@ -62,6 +88,13 @@ The MVP stores decision records in DuckDB tables for:
 - predictions
 - audit_reports
 - replay_events
+
+The ETL warehouse stores:
+
+- etl_runs
+- bronze_transactions
+- silver_transactions
+- gold_features
 
 Each stored prediction includes the payload, derived features, model run ID, calibrated probability, decision label, explanation, and report output.
 

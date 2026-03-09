@@ -9,18 +9,24 @@ Rift is an auditable fraud detection system that combines graph-aware fraud scor
 
 ```mermaid
 flowchart LR
-    A[Transactions] --> B[Polars Feature Engine]
-    A --> C[Graph Builder]
-    C --> D[GraphSAGE-style Encoder]
-    D --> E[Embeddings]
-    B --> F[Hybrid Fraud Model]
-    E --> F
-    F --> G[Calibration]
-    G --> H[Conformal Triage]
-    H --> I[Decision Recorder]
-    H --> J[Explainer]
-    I --> K[DuckDB Audit Store]
-    J --> L[Plain-English Report]
+    A[Raw Source Data] --> B[Bronze ETL Layer]
+    B --> C[Silver Canonical Transactions]
+    C --> D[Gold Feature Store]
+    D --> E[Polars Feature Engine]
+    C --> F[Graph Builder]
+    F --> G[GraphSAGE-style Encoder]
+    G --> H[Embeddings]
+    E --> I[Hybrid Fraud Model]
+    H --> I
+    I --> J[Calibration]
+    J --> K[Conformal Triage]
+    K --> L[Decision Recorder]
+    K --> M[Explainer]
+    L --> N[DuckDB Audit Store]
+    B --> O[DuckDB ETL Warehouse]
+    C --> O
+    D --> O
+    M --> P[Plain-English Report]
 ```
 
 ## Why Rift exists
@@ -60,10 +66,19 @@ rift replay <decision_id>
 rift audit <decision_id> --format markdown
 ```
 
+Run the ETL pipeline on a government-style raw source file:
+
+```bash
+rift etl run --source demo/government_transactions.csv --source-system treasury_disbursements --dataset-name gov_demo
+rift etl status --limit 5
+```
+
 ## Current implemented surface
 
 The current MVP ships these CLI commands:
 
+- `rift etl run --source <path>`
+- `rift etl status`
 - `rift generate`
 - `rift train`
 - `rift predict --tx <path>`
@@ -81,15 +96,52 @@ Supported training modes today:
 Artifacts are written under `.rift/` by default:
 
 - `.rift/data/transactions.parquet`
+- `.rift/data/features.parquet`
+- `.rift/etl/bronze/*.parquet`
+- `.rift/etl/silver/*.parquet`
+- `.rift/etl/gold/*.parquet`
+- `.rift/etl/lineage/*.json`
+- `.rift/etl/warehouse.duckdb`
 - `.rift/runs/<run_id>/artifact.pkl`
 - `.rift/runs/<run_id>/metrics.json`
 - `.rift/audit/rift.duckdb`
+
+## Government-ready ETL
+
+Rift now includes an auditable ETL layer aimed at high-governance environments such as government finance, benefits, tax, and procurement workflows.
+
+The pipeline supports:
+
+- extraction from CSV, JSON, and Parquet sources;
+- alias normalization from government-style source fields into Rift's canonical transaction schema;
+- validation and bad-row filtering for timestamps and amounts;
+- deterministic deduplication by transaction ID;
+- redaction of direct sensitive fields such as names, emails, taxpayer identifiers, and addresses;
+- bronze, silver, and gold data layers;
+- lineage manifests and DuckDB warehouse loading for operational traceability.
+
+```mermaid
+flowchart TD
+    A[Raw CSV / JSON / Parquet] --> B[Extract]
+    B --> C[Normalize Aliases]
+    C --> D[Validate and Deduplicate]
+    D --> E[Redact Sensitive Fields]
+    E --> F[Bronze Snapshot]
+    E --> G[Silver Canonical Transactions]
+    G --> H[Gold Feature Store]
+    F --> I[Warehouse Loader]
+    G --> I
+    H --> I
+    I --> J[DuckDB ETL Warehouse]
+    G --> K[Current Training Snapshot]
+```
 
 ## Architecture
 
 Rift ships with:
 
 - a synthetic fintech transaction simulator;
+- an auditable bronze/silver/gold ETL pipeline;
 - a Polars feature pipeline;
 - a heterogeneous-to-transaction graph builder;
 - a GraphSAGE-style relational encoder;
@@ -101,12 +153,13 @@ Rift ships with:
 ## Demo flow
 
 1. Generate a synthetic transaction history with injected fraud patterns.
-2. Build temporal and behavioral features.
-3. Construct a relational graph between transactions and shared entities.
-4. Train a tabular or hybrid model.
-5. Calibrate the model and fit a conformal triage layer.
-6. Score new transactions and record each decision for replay.
-7. Render plain-English audit reports for non-technical stakeholders.
+2. Ingest and normalize raw records through the ETL pipeline when source data arrives externally.
+3. Build temporal and behavioral features.
+4. Construct a relational graph between transactions and shared entities.
+5. Train a tabular or hybrid model.
+6. Calibrate the model and fit a conformal triage layer.
+7. Score new transactions and record each decision for replay.
+8. Render plain-English audit reports for non-technical stakeholders.
 
 ## Experiments
 
@@ -139,6 +192,7 @@ The FastAPI app exposes:
 - `POST /predict`
 - `GET /replay/{decision_id}`
 - `GET /audit/{decision_id}`
+- `GET /etl/status`
 - `GET /metrics/latest`
 - `GET /models/current`
 
@@ -160,6 +214,7 @@ To keep the repo aligned with shipped behavior:
 
 Current MVP:
 
+- auditable ETL ingestion and feature loading;
 - synthetic data generation;
 - feature engineering;
 - graph-aware hybrid training;

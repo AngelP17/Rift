@@ -8,6 +8,7 @@ import polars as pl
 import typer
 
 from rift.data.generator import generate_transactions
+from rift.etl.pipeline import list_etl_runs, run_etl_pipeline
 from rift.explain.report import build_audit_report, build_explanation, report_to_markdown
 from rift.models.infer import load_run, payload_to_frame, score_frame
 from rift.models.train import train_from_frame
@@ -19,6 +20,8 @@ from rift.utils.io import read_json
 
 
 app = typer.Typer(help="Rift: graph ML for fraud detection, replay, and audit.")
+etl_app = typer.Typer(help="Auditable ETL pipelines for transaction and government-style source data.")
+app.add_typer(etl_app, name="etl")
 
 
 @app.command()
@@ -132,6 +135,28 @@ def export(since: int = typer.Option(90), format: str = typer.Option("markdown")
         typer.echo(json.dumps([json.loads(row[2]) for row in rows], indent=2))
         return
     typer.echo("\n\n---\n\n".join(row[1] for row in rows))
+
+
+@etl_app.command("run")
+def etl_run(
+    source: Path = typer.Option(..., "--source", exists=True, readable=True),
+    source_system: str = typer.Option("government_finance"),
+    dataset_name: str = typer.Option("transactions"),
+) -> None:
+    paths = get_paths()
+    summary = run_etl_pipeline(
+        source=source,
+        paths=paths,
+        source_system=source_system,
+        dataset_name=dataset_name,
+    )
+    typer.echo(json.dumps(summary.to_dict(), indent=2))
+
+
+@etl_app.command("status")
+def etl_status(limit: int = typer.Option(10, min=1, max=100)) -> None:
+    paths = get_paths()
+    typer.echo(json.dumps(list_etl_runs(paths.warehouse_db, limit=limit), indent=2, default=str))
 
 
 if __name__ == "__main__":

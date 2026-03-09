@@ -5,6 +5,7 @@ import json
 from fastapi import FastAPI, HTTPException
 
 from rift.data.schemas import PredictionRequest
+from rift.etl.pipeline import list_etl_runs
 from rift.explain.report import build_audit_report, build_explanation, report_to_markdown
 from rift.models.infer import load_run, payload_to_frame, score_frame
 from rift.replay.hashing import decision_hash
@@ -80,3 +81,8 @@ def current_model() -> dict:
     paths = get_paths()
     current = read_json(paths.runs_dir / "current_run.json")
     return {"run_id": current["run_id"], "artifact_path": current["artifact_path"]}
+
+
+@app.get("/etl/status")
+def etl_status(limit: int = 10) -> list[dict]:
+    return list_etl_runs(get_paths().warehouse_db, limit=limit)
