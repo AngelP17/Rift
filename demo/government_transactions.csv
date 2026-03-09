@@ -1,0 +1,4 @@
+transaction_id,beneficiary_id,vendor_id,payment_account_id,amount,currency,event_time,latitude,longitude,source_channel,merchant_category,full_name,email_address,taxpayer_id,is_fraud
+gov_tx_0001,case_001,vendor_100,acct_gov_001,12450.75,USD,2025-02-01T09:15:00,38.8895,-77.0353,portal,public_procurement,Jane Doe,jane.doe@example.gov,TAX-001,0
+gov_tx_0002,case_002,vendor_240,acct_gov_002,845.10,USD,2025-02-01T10:45:00,39.9526,-75.1652,batch,benefits,John Smith,john.smith@example.gov,TAX-002,0
+gov_tx_0003,case_001,vendor_100,acct_gov_001,25000.00,USD,2025-02-01T11:05:00,34.0522,-118.2437,portal,public_procurement,Jane Doe,jane.doe@example.gov,TAX-001,1

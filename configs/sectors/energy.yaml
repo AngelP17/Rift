@@ -1,0 +1,17 @@
+name: energy
+source_system: energy_billing
+field_aliases:
+  meter_id: device_id
+  customer_id: user_id
+  utility_id: merchant_id
+  invoice_id: tx_id
+  invoice_amount: amount
+  invoice_timestamp: timestamp
+privacy_masks:
+  - service_address
+  - customer_name
+added_columns:
+  channel: billing_batch
+  mcc: utility_billing
+  currency: USD
+  sector: energy

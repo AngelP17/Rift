@@ -1,0 +1,30 @@
+name: Rift Validation Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - cursor/**
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Rift
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,local-stack]"
+
+      - name: Run validation gates
+        run: |
+          chmod +x scripts/ci_validate.sh
+          ./scripts/ci_validate.sh

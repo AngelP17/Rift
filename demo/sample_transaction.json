@@ -1,15 +1,14 @@
 {
-  "tx_id": "TX_DEMO_001",
-  "user_id": "U_000042",
-  "merchant_id": "M_000100",
-  "device_id": "D_000077",
-  "account_id": "A_000042",
-  "amount": 2499.99,
+  "tx_id": "demo_tx_0001",
+  "user_id": "user_00001",
+  "merchant_id": "merchant_00042",
+  "device_id": "device_00010",
+  "account_id": "acct_00001",
+  "amount": 842.15,
   "currency": "USD",
-  "timestamp": "2024-06-15T03:22:00",
+  "timestamp": "2025-03-01T10:30:00",
   "lat": 40.7128,
   "lon": -74.0060,
   "channel": "web",
-  "mcc": "electronics",
-  "is_fraud": 0
+  "mcc": "electronics"
 }

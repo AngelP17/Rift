@@ -1,0 +1,69 @@
+# Model Card: {{ model_name }}
+
+## Overview
+
+- Run ID: `{{ run_id }}`
+- Model type: `{{ model_type }}`
+- Generated at: `{{ generated_at }}`
+- Training timestamp: `{{ trained_at }}`
+- MLflow run ID: `{{ mlflow_run_id or "not logged" }}`
+
+## Intended use
+
+This model is part of Rift, an open-source fraud detection system for auditable risk scoring, replay, and governance workflows.
+
+## Training data
+
+- Data path: `{{ data_path }}`
+- Feature count: `{{ feature_count }}`
+- Time-aware split: `{{ time_split }}`
+- Calibration method: `{{ calibration_method }}`
+- Sector profile: `{{ sector_profile }}`
+
+## Evaluation metrics
+
+{% for key, value in metrics.items() -%}
+- {{ key }}: {{ value }}
+{% endfor %}
+
+## Fairness and bias considerations
+
+{% if latest_fairness %}
+- Latest fairness audit: `{{ latest_fairness.audit_id }}`
+- Sensitive column: `{{ latest_fairness.sensitive_column }}`
+- Demographic parity difference: {{ latest_fairness.demographic_parity_difference }}
+- Disparate impact ratio: {{ latest_fairness.disparate_impact_ratio }}
+- Equal opportunity difference: {{ latest_fairness.equal_opportunity_difference }}
+{% else %}
+- No fairness audit was available when this card was generated.
+{% endif %}
+
+## Drift and monitoring
+
+{% if latest_drift %}
+- Latest drift report: `{{ latest_drift.report_id }}`
+- Drift detected: `{{ latest_drift.is_drift }}`
+- Drift score: {{ latest_drift.drift_score }}
+- Retraining triggered: `{{ latest_drift.retrain_triggered }}`
+{% else %}
+- No drift report was available when this card was generated.
+{% endif %}
+
+## Environmental and efficiency notes
+
+- Optimization mode: `{{ optimization.mode }}`
+- Estimated artifact bytes before optimization: {{ optimization.bytes_before }}
+- Estimated artifact bytes after optimization: {{ optimization.bytes_after }}
+- Estimated storage reduction ratio: {{ optimization.reduction_ratio }}
+
+## Ethical and governance notes
+
+- The default Rift path is open-source and zero-cost.
+- Sensitive fields should be redacted or hashed before governance exports.
+- Predictions should be paired with replay and audit outputs for high-stakes workflows.
+
+## Caveats
+
+- Synthetic data is useful for architecture validation but does not replace real-world production validation.
+- Fairness and drift metrics depend on the provided data and sensitive columns.
+- Federated and green optimization paths are currently lightweight OSS-first implementations intended for local development and governance reviews.

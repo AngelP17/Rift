@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  jupyterhub:
+    image: jupyterhub/jupyterhub:5.2
+    ports:
+      - "8888:8000"
+    volumes:
+      - ../hub-config:/srv/jupyterhub
+      - ../:/workspace
+    command: jupyterhub -f /srv/jupyterhub/jupyterhub_config.py
