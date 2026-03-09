@@ -1,3 +1,28 @@
+Metadata-Version: 2.4
+Name: rift-fraud
+Version: 0.1.0
+Summary: Rift: Graph ML for fraud detection, replay, and audit.
+Author: Angel L. Pinzon
+License: MIT
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: duckdb
+Requires-Dist: fastapi
+Requires-Dist: networkx
+Requires-Dist: numpy
+Requires-Dist: polars
+Requires-Dist: pydantic
+Requires-Dist: pyarrow
+Requires-Dist: scikit-learn
+Requires-Dist: typer
+Requires-Dist: uvicorn
+Requires-Dist: xgboost
+Provides-Extra: dev
+Requires-Dist: httpx; extra == "dev"
+Requires-Dist: pytest; extra == "dev"
+Dynamic: license-file
+
 # Rift
 
 **Graph ML for fraud detection, replay, and audit**

@@ -1,0 +1,2 @@
+[console_scripts]
+rift = rift.cli.main:app

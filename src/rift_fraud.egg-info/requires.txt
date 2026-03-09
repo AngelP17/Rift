@@ -1,0 +1,15 @@
+duckdb
+fastapi
+networkx
+numpy
+polars
+pydantic
+pyarrow
+scikit-learn
+typer
+uvicorn
+xgboost
+
+[dev]
+httpx
+pytest
