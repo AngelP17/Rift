@@ -1,0 +1,15 @@
+{
+  "tx_id": "TX_DEMO_001",
+  "user_id": "U_000042",
+  "merchant_id": "M_000100",
+  "device_id": "D_000077",
+  "account_id": "A_000042",
+  "amount": 2499.99,
+  "currency": "USD",
+  "timestamp": "2024-06-15T03:22:00",
+  "lat": 40.7128,
+  "lon": -74.0060,
+  "channel": "web",
+  "mcc": "electronics",
+  "is_fraud": 0
+}
