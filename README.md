@@ -567,10 +567,12 @@ Next iterations:
 - richer Ollama-backed summarization and retrieval when a local model is available;
 - optional container smoke tests in CI when Docker is available.
 
-## Contributing
+```bash
+pip install -e ".[dev]"
+export PYTHONPATH=src
 
 Contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-This project is open source and available under the [MIT License](LICENSE).
+[MIT](LICENSE)

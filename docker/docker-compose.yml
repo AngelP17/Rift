@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  rift-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - rift-data:/app/data
+      - rift-artifacts:/app/artifacts
+    environment:
+      - RIFT_SEED=42
+      - RIFT_LOG_LEVEL=INFO
+      - RIFT_DEVICE=cpu
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  rift-data:
+  rift-artifacts:
