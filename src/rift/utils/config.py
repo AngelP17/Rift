@@ -31,6 +31,10 @@ class RiftPaths:
     query_dir: Path
 
 
+def get_repo_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
 def get_paths() -> RiftPaths:
     home = Path(os.getenv("RIFT_HOME", ".rift"))
     data_path = Path(os.getenv("RIFT_DATA_PATH", home / "data" / "transactions.parquet"))

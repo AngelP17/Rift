@@ -9,7 +9,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from rift.governance.fairness import list_fairness_audits
 from rift.monitoring.drift import list_drift_reports
-from rift.utils.config import RiftPaths
+from rift.utils.config import RiftPaths, get_repo_root
 from rift.utils.io import read_json, read_pickle
 
 
@@ -34,10 +34,10 @@ def _latest_by_run(rows: list[dict[str, Any]], run_id: str) -> dict[str, Any] | 
     return None
 
 
-def generate_model_card(paths: RiftPaths, run_id: str, repo_root: Path) -> ModelCardSummary:
+def generate_model_card(paths: RiftPaths, run_id: str, repo_root: Path | None = None) -> ModelCardSummary:
     metadata = read_json(paths.runs_dir / run_id / "metrics.json")
     artifact = read_pickle(paths.runs_dir / run_id / "artifact.pkl")
-    env = _template_env(repo_root)
+    env = _template_env(repo_root or get_repo_root())
     fairness = _latest_by_run(list_fairness_audits(paths, limit=50), run_id)
     drift = _latest_by_run(list_drift_reports(paths, limit=50), run_id)
     optimization = artifact.get("optimization", {"mode": "standard", "bytes_before": 0, "bytes_after": 0, "reduction_ratio": 0.0})

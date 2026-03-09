@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
@@ -22,7 +21,7 @@ from rift.replay.hashing import decision_hash
 from rift.replay.recorder import record_decision
 from rift.replay.replayer import replay_decision
 from rift.storage.backends import get_storage_backend
-from rift.utils.config import get_paths
+from rift.utils.config import get_paths, get_repo_root
 from rift.utils.io import read_json
 
 
@@ -136,7 +135,7 @@ def dashboard() -> HTMLResponse:
 
 @app.post("/governance/model-card/{run_id}")
 def model_card(run_id: str) -> dict:
-    return generate_model_card(get_paths(), run_id, repo_root=Path("/workspace")).to_dict()
+    return generate_model_card(get_paths(), run_id, repo_root=get_repo_root()).to_dict()
 
 
 @app.get("/storage/status")
