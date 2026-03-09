@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -113,8 +112,8 @@ def train_federated_model(
 
     mean, std = _fit_scaler(train_x)
     train_x_scaled = (train_x - mean) / std
-    val_x_scaled = (val_x - mean) / std
-    test_x_scaled = (test_x - mean) / std
+    (val_x - mean) / std
+    (test_x - mean) / std
 
     client_values = [str(value) for value in train_frame[client_column].to_list()]
     unique_clients = sorted(set(client_values))

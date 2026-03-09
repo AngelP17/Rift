@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
 
-import polars as pl
 
 from rift.data.generator import generate_transactions
 from rift.explain.report import build_audit_report, report_to_markdown

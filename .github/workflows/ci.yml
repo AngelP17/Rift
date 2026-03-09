@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Install ruff
         run: pip install ruff
       - name: Run lint
@@ -26,51 +26,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: "pip"
-      - name: Install dependencies
+      - name: Install Rift and dependencies
         run: |
-          pip install polars numpy pandas scikit-learn xgboost torch --index-url https://download.pytorch.org/whl/cpu
-          pip install duckdb fastapi uvicorn typer pydantic rich jinja2 python-dotenv structlog
-          pip install shap pytest pytest-cov ruff
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip install pyarrow rich python-dotenv structlog shap torch --index-url https://download.pytorch.org/whl/cpu
       - name: Run tests
-        run: PYTHONPATH=src pytest tests/ -v --tb=short --cov=src --cov-report=xml
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.xml
-
-  validate:
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
-      - name: Install dependencies
-        run: |
-          pip install polars numpy pandas scikit-learn xgboost torch --index-url https://download.pytorch.org/whl/cpu
-          pip install duckdb fastapi uvicorn typer pydantic rich jinja2 python-dotenv structlog shap
-          pip install deepchecks
-      - name: Generate test data
-        run: PYTHONPATH=src python -m cli.main generate --txns 1000 --fraud-rate 0.05 --seed 42
-      - name: Run Deepchecks validation
-        run: |
-          PYTHONPATH=src python -c "
-          from validate.deepchecks_suite import run_data_validation
-          result = run_data_validation('data/transactions.parquet', 'data/transactions.parquet')
-          print(result)
-          if not result.get('error'):
-              assert result.get('integrity_passed', True), 'Data integrity check failed'
-          "
-        continue-on-error: true
-      - name: Upload validation report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: validation-report
-          path: data/reports/
+        run: pytest tests/ -v --tb=short

@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any
 
 import duckdb
-import polars as pl
 
 from rift.utils.config import RiftPaths
 

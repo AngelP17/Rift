@@ -208,30 +208,31 @@ def _train_hybrid(train_df, val_df, test_df, cal_method, epochs, booster, encode
 
     ensemble = HybridEnsemble(gnn, booster=booster)
 
-    x[:n_train]
-    _filter_edges(edge_index, n_train)
-
-    x[n_train:n_train + n_val]
-    _filter_edges(edge_index, n_val, offset=n_train)
-
-    labels[:n_train].numpy().astype(np.float32)
+    y_train = labels[:n_train].numpy().astype(np.float32)
     y_val = labels[n_train:n_train + n_val].numpy().astype(np.float32)
     y_test = labels[n_train + n_val:].numpy().astype(np.float32)
 
-    ensemble.fit(
-        x[:n_train + n_val + len(test_df)], edge_index,
-        labels[:n_train].numpy().astype(np.float32),
-        tabular_train,
-    )
+    gnn.eval()
+    with torch.no_grad():
+        if hasattr(gnn, "encoder"):
+            all_emb = gnn.encoder(x, edge_index).cpu().numpy()
+        else:
+            all_emb = gnn(x, edge_index).cpu().numpy()
 
-    raw_scores = ensemble.predict_proba(
-        x[:n_train + n_val + len(test_df)], edge_index, tabular_test,
-    )[:len(test_df)]
+    train_emb = all_emb[:n_train]
+    val_emb = all_emb[n_train:n_train + n_val]
+    test_emb = all_emb[n_train + n_val:]
+
+    train_combined = np.concatenate([train_emb, tabular_train], axis=1)
+    val_combined = np.concatenate([val_emb, tabular_val], axis=1)
+    test_combined = np.concatenate([test_emb, tabular_test], axis=1)
+
+    ensemble._fit_booster(train_combined, y_train, val_combined, y_val)
+
+    raw_scores = ensemble._predict_booster(test_combined)
     raw_metrics = compute_all_metrics(y_test, raw_scores, prefix="raw")
 
-    val_raw = ensemble.predict_proba(
-        x[:n_train + n_val + len(test_df)], edge_index, tabular_val,
-    )[:len(val_df)]
+    val_raw = ensemble._predict_booster(val_combined)
     _, calibrator = calibrate_scores(val_raw, y_val, method=cal_method)
     calibrated_test = calibrator.calibrate(raw_scores)
     cal_metrics = compute_all_metrics(y_test, calibrated_test, prefix="calibrated")

@@ -112,15 +112,62 @@ class HybridEnsemble:
 
         return {"booster": self.booster_type, "features_dim": features.shape[1]}
 
-    def predict_proba(
-        self, x: torch.Tensor, edge_index: torch.Tensor, tabular: np.ndarray | None = None,
-    ) -> np.ndarray:
-        features = self._combine(x, edge_index, tabular)
+    def _fit_booster(
+        self,
+        train_features: np.ndarray,
+        y_train: np.ndarray,
+        val_features: np.ndarray | None = None,
+        y_val: np.ndarray | None = None,
+    ) -> dict:
+        """Fit only the booster on pre-computed feature matrices (embeddings already concatenated)."""
+        pos = y_train.sum()
+        neg = len(y_train) - pos
+        scale = float(neg / pos) if pos > 0 else 1.0
+
+        log.info("fit_booster", booster=self.booster_type, features=train_features.shape)
+
+        if self.booster_type == "xgboost":
+            self.xgb_params["scale_pos_weight"] = scale
+            dtrain = xgb.DMatrix(train_features, label=y_train)
+            evals = [(dtrain, "train")]
+            if val_features is not None and y_val is not None:
+                dval = xgb.DMatrix(val_features, label=y_val)
+                evals.append((dval, "val"))
+            self.classifier = xgb.train(
+                self.xgb_params, dtrain,
+                num_boost_round=self.num_rounds,
+                evals=evals, early_stopping_rounds=30,
+                verbose_eval=False,
+            )
+        else:
+            import lightgbm as lgb
+            self.lgb_params["scale_pos_weight"] = scale
+            dtrain = lgb.Dataset(train_features, label=y_train)
+            callbacks = [lgb.early_stopping(30, verbose=False), lgb.log_evaluation(0)]
+            val_sets = []
+            if val_features is not None and y_val is not None:
+                val_sets = [lgb.Dataset(val_features, label=y_val, reference=dtrain)]
+            self.classifier = lgb.train(
+                self.lgb_params, dtrain,
+                num_boost_round=self.num_rounds,
+                valid_sets=val_sets,
+                callbacks=callbacks,
+            )
+        return {"booster": self.booster_type, "features_dim": train_features.shape[1]}
+
+    def _predict_booster(self, features: np.ndarray) -> np.ndarray:
+        """Predict using only the booster on pre-computed feature matrices."""
         if self.booster_type == "xgboost":
             dm = xgb.DMatrix(features)
             return self.classifier.predict(dm)
         else:
             return self.classifier.predict(features)
+
+    def predict_proba(
+        self, x: torch.Tensor, edge_index: torch.Tensor, tabular: np.ndarray | None = None,
+    ) -> np.ndarray:
+        features = self._combine(x, edge_index, tabular)
+        return self._predict_booster(features)
 
     def save(self, path: Path | None = None) -> Path:
         path = path or (cfg.model_dir / f"hybrid_{self.booster_type}.pkl")

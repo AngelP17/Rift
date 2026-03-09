@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from math import sqrt
 from typing import Any
 
 import numpy as np
