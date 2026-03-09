@@ -1,19 +1,97 @@
 # Rift
 
-Welcome to Rift!
+**Graph ML for Fraud Detection, Replay, and Audit**
 
-## About
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-This project is currently under development.
+Rift is an auditable fraud detection system that combines graph neural networks, calibrated risk scoring, conformal uncertainty, deterministic replay, and plain-English audit reports.
 
-## Getting Started
+```mermaid
+flowchart LR
+    A[Transactions] --> B[Feature Engine]
+    A --> C[Graph Builder]
+    C --> D[GraphSAGE]
+    D --> E[Embeddings]
+    B --> F[XGBoost Hybrid]
+    E --> F
+    F --> G[Calibration]
+    G --> H[Conformal]
+    H --> I[Decision Recorder]
+    H --> J[Explainer]
+    I --> K[DuckDB]
+    J --> L[Audit Report]
+```
 
-More information coming soon.
+## Why Rift exists
 
-## Contributing
+- **For ML engineers**: Graph modeling, temporal robustness, calibration, uncertainty
+- **For fintech risk teams**: Fraud scoring with replayable decisions
+- **For auditors / Big Four**: Audit-ready reports and governance artifacts
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## What it proves
+
+1. Fraud is relational, not just tabular
+2. Time-aware evaluation matters
+3. Probabilities must be calibrated
+4. High-stakes decisions need uncertainty
+5. Explanations must be usable by non-technical people
+
+## Quick start
+
+```bash
+# Install
+pip install -e .
+
+# Generate synthetic data
+rift generate --txns 10000 --fraud-rate 0.02
+
+# Train model
+rift train --model graphsage_xgb --time-split
+
+# Predict (requires trained model)
+rift predict demo/sample_transaction.json
+
+# Replay a decision
+rift replay <decision_id>
+
+# Export audit reports
+rift export --since 90d --format markdown
+```
+
+## API
+
+```bash
+uvicorn rift.api.server:app --reload
+# POST /predict, GET /replay/{id}, GET /audit/{id}, GET /metrics/latest
+```
+
+## Demo flow
+
+```bash
+cd demo && bash full_audit.sh
+```
+
+## Experiments
+
+See [docs/experiments.md](docs/experiments.md) for relational vs tabular, temporal leakage, calibration, and conformal experiments.
+
+## Audit mode
+
+See [AUDIT_GUIDE.md](AUDIT_GUIDE.md) for non-technical documentation on decision IDs, replay, confidence bands, and redaction.
+
+## Related work
+
+See [docs/theory.md](docs/theory.md) for citations and theoretical grounding.
+
+## Roadmap
+
+- [x] Synthetic data, graph builder, GraphSAGE + XGBoost hybrid
+- [x] Calibration, conformal, SHAP, counterfactuals
+- [x] DuckDB recorder, replay engine, audit reports
+- [ ] Temporal GNN (v2)
+- [ ] Fair conformal (group coverage)
 
 ## License
 
-This project is open source and available under the [MIT License](LICENSE).
+MIT

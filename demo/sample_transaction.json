@@ -1,0 +1,14 @@
+{
+  "tx_id": "tx_demo_001",
+  "user_id": "u_0",
+  "merchant_id": "m_42",
+  "device_id": "d_100",
+  "account_id": "a_0",
+  "amount": 125.50,
+  "currency": "USD",
+  "timestamp": "2024-06-15T14:30:00",
+  "lat": 37.7749,
+  "lon": -122.4194,
+  "channel": "mobile",
+  "mcc": "5812"
+}

@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  rift-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - RIFT_ARTIFACTS_DIR=/app/artifacts
+      - RIFT_API_HOST=0.0.0.0
+      - RIFT_API_PORT=8000
+    volumes:
+      - ../artifacts:/app/artifacts
