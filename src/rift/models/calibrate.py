@@ -17,6 +17,9 @@ class ProbabilityCalibrator:
     def fit(self, probabilities: np.ndarray, labels: np.ndarray) -> None:
         x = np.asarray(probabilities, dtype=float).reshape(-1, 1)
         y = np.asarray(labels, dtype=int)
+        if x.shape[0] < 2:
+            self.model = None
+            return
         if self.method == "platt":
             model = LogisticRegression(max_iter=1_000)
             model.fit(x, y)
@@ -27,9 +30,9 @@ class ProbabilityCalibrator:
         self.model = model
 
     def predict(self, probabilities: np.ndarray) -> np.ndarray:
-        if self.model is None:
-            raise RuntimeError("calibrator is not fitted")
         x = np.asarray(probabilities, dtype=float).reshape(-1, 1)
+        if self.model is None:
+            return x.ravel()
         if isinstance(self.model, LogisticRegression):
             return self.model.predict_proba(x)[:, 1]
         return self.model.predict(x.ravel())
