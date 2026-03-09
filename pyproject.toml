@@ -53,6 +53,25 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.7.0",
 ]
+mlops = [
+    "mlflow>=2.9.0",
+    "clearml>=1.14.0",
+]
+monitoring = [
+    "evidently>=0.4.0",
+    "deepchecks>=0.18.0",
+    "streamlit>=1.29.0",
+]
+search = [
+    "faiss-cpu>=1.7.0",
+    "sentence-transformers>=2.2.0",
+]
+llm = [
+    "ollama>=0.1.0",
+]
+all = [
+    "rift[dev,mlops,monitoring,search,llm]",
+]
 
 [project.scripts]
 rift = "cli.main:app"

@@ -234,7 +234,58 @@ sequenceDiagram
 
 See [docs/theory.md](docs/theory.md) for full citations.
 
-## 9. Roadmap
+## 9. MLOps & Monitoring
+
+Rift includes production-grade MLOps integrations. Install with:
+
+```bash
+pip install -e ".[all]"  # everything
+pip install -e ".[mlops]"  # MLflow + ClearML
+pip install -e ".[monitoring]"  # Evidently + Deepchecks + Streamlit
+pip install -e ".[search]"  # FAISS + sentence-transformers
+pip install -e ".[llm]"  # Ollama chat
+```
+
+### Experiment Tracking (MLflow / ClearML)
+
+```bash
+rift train --model graphsage_xgb --time-split --tracker mlflow --mlflow-backend sqlite
+# Runs are logged to sqlite:///data/mlflow.db
+```
+
+### Continuous Validation (Deepchecks)
+
+```bash
+rift validate --suite deepchecks --ref data/reference.parquet --cur data/current.parquet
+# Generates HTML report with data integrity, bias, and performance checks
+```
+
+### Drift Monitoring (Evidently)
+
+```bash
+rift monitor --ui evidently --ref data/reference.parquet --cur data/current.parquet
+# Or launch the Streamlit dashboard:
+rift monitor --ui streamlit
+```
+
+### Semantic Audit Search (FAISS)
+
+```bash
+rift search-audits --query "high velocity fraud from new device" --k 5
+```
+
+### Audit Chat (Ollama)
+
+```bash
+rift query --natural "How many high-confidence fraud decisions this week?"
+rift query --natural "Explain decision DEC_ABC123" --chat  # multi-turn mode
+```
+
+## 10. Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system architecture with Mermaid.js diagrams.
+
+## 11. Roadmap
 
 - [x] Synthetic data generator with 7 fraud patterns
 - [x] Polars feature engineering pipeline
@@ -248,6 +299,14 @@ See [docs/theory.md](docs/theory.md) for full citations.
 - [x] DuckDB audit store
 - [x] FastAPI + CLI
 - [x] Docker support
+- [x] MLflow SQLite experiment tracking
+- [x] ClearML experiment tracker
+- [x] Deepchecks continuous validation
+- [x] Evidently drift monitoring + Streamlit dashboard
+- [x] FAISS semantic audit search
+- [x] Ollama audit chat assistant
+- [x] GitHub Actions CI/CD pipeline
+- [x] ARCHITECTURE.md with Mermaid diagrams
 - [ ] Temporal GNN extension (TGAT)
 - [ ] LightGBM booster option
 - [ ] PDF report export
