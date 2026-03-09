@@ -1,0 +1,4 @@
+TransactionID,TransactionDT,TransactionAmt,ProductCD,card1,card4,addr1,addr2,DeviceType,DeviceInfo,isFraud
+1001,3600,125.50,W,1501,visa,42,12,desktop,Windows,0
+1002,7200,980.00,C,1501,visa,43,12,mobile,iPhone,1
+1003,10800,15.99,R,2002,mastercard,40,10,mobile,Android,0

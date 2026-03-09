@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Rift is an auditable fraud detection system that combines graph-aware fraud scoring, calibrated probabilities, conformal uncertainty, deterministic replay, and plain-English audit reports.
+Rift is an auditable fraud detection system that combines graph-aware fraud scoring, calibrated probabilities, conformal uncertainty, deterministic replay, plain-English audit reports, and zero-cost local governance tooling.
 
 ```mermaid
 flowchart LR
@@ -73,12 +73,32 @@ rift etl run --source demo/government_transactions.csv --source-system treasury_
 rift etl status --limit 5
 ```
 
+Prepare a public benchmark dataset, run a fairness audit, and train a local federated baseline:
+
+```bash
+rift dataset prepare --adapter ieee_cis --source demo/ieee_cis_sample.csv
+rift fairness audit --sensitive-column channel
+rift federated train --client-column channel --rounds 3 --local-epochs 2
+```
+
+Launch the built-in dashboard:
+
+```bash
+rift dashboard --host 127.0.0.1 --port 8000
+```
+
 ## Current implemented surface
 
 The current MVP ships these CLI commands:
 
+- `rift dataset prepare --adapter <name> --source <path>`
+- `rift dataset status`
 - `rift etl run --source <path>`
 - `rift etl status`
+- `rift fairness audit --sensitive-column <column>`
+- `rift fairness status`
+- `rift federated train`
+- `rift federated status`
 - `rift generate`
 - `rift train`
 - `rift predict --tx <path>`
@@ -86,6 +106,7 @@ The current MVP ships these CLI commands:
 - `rift audit <decision_id> --format {markdown,json}`
 - `rift compare`
 - `rift export --format {markdown,json}`
+- `rift dashboard`
 
 Supported training modes today:
 
@@ -93,18 +114,45 @@ Supported training modes today:
 - `graphsage_only`
 - `graphsage_xgb`
 
+Supported public dataset adapters today:
+
+- `ieee_cis`
+- `credit_card_fraud`
+
 Artifacts are written under `.rift/` by default:
 
 - `.rift/data/transactions.parquet`
 - `.rift/data/features.parquet`
+- `.rift/datasets/*.parquet`
+- `.rift/datasets/*.json`
 - `.rift/etl/bronze/*.parquet`
 - `.rift/etl/silver/*.parquet`
 - `.rift/etl/gold/*.parquet`
 - `.rift/etl/lineage/*.json`
 - `.rift/etl/warehouse.duckdb`
+- `.rift/governance/fairness/*.json`
+- `.rift/governance/governance.duckdb`
+- `.rift/federated/fed_*/artifact.pkl`
+- `.rift/federated/fed_*/metrics.json`
 - `.rift/runs/<run_id>/artifact.pkl`
 - `.rift/runs/<run_id>/metrics.json`
 - `.rift/audit/rift.duckdb`
+
+## Open-source and zero-cost architecture
+
+Rift is intentionally designed to stay open-source and zero-cost for core usage.
+
+That means the default path uses:
+
+- Python, FastAPI, Typer, and pytest;
+- Parquet and DuckDB for storage and analytics;
+- Polars and NumPy for data and feature processing;
+- scikit-learn and XGBoost for modeling;
+- local files and local processes rather than paid managed services.
+
+Rift does **not** require BigQuery, DataProc, PubSub, proprietary dashboards, closed-source model hosting, or any paid cloud service to run its core workflows.
+
+If optional integrations are added later, they should remain optional and must not replace the local OSS-first path.
 
 ## Government-ready ETL
 
@@ -136,30 +184,87 @@ flowchart TD
     G --> K[Current Training Snapshot]
 ```
 
+## Fairness governance
+
+Rift now includes a fairness audit pipeline for high-governance usage.
+
+It supports:
+
+- scoring a labeled dataset with the current model run;
+- auditing outcomes by a sensitive column such as `channel`, `mcc`, or another group field;
+- demographic parity difference;
+- disparate impact ratio;
+- equal opportunity difference when labels are available;
+- persisted governance reports under `.rift/governance/`.
+
+```mermaid
+flowchart TD
+    A[Canonical Dataset] --> B[Load Current Model]
+    B --> C[Score Probabilities]
+    C --> D[Group by Sensitive Column]
+    D --> E[Compute Fairness Metrics]
+    E --> F[Governance Report JSON]
+    F --> G[Governance DuckDB]
+    F --> H[Dashboard]
+```
+
+## Federated training scaffolding
+
+Rift now ships with a zero-cost local federated learning scaffold for experimentation.
+
+The current implementation:
+
+- partitions training data by a client column such as `channel`;
+- runs local logistic updates on each client;
+- aggregates weights with a FedAvg-style weighted average;
+- calibrates and evaluates the resulting global model;
+- stores federated run artifacts separately under `.rift/federated/`.
+
+This is intended as an OSS-first local simulator for collaboration and architecture design, not as a requirement for any proprietary orchestration platform.
+
+## Dashboard
+
+Rift includes a built-in operational dashboard served from the FastAPI app.
+
+The dashboard surfaces:
+
+- ETL lineage status;
+- prepared public datasets;
+- fairness audit summaries;
+- federated run summaries;
+- recent audit decisions;
+- current model metrics.
+
 ## Architecture
 
 Rift ships with:
 
 - a synthetic fintech transaction simulator;
+- public dataset preparation adapters;
 - an auditable bronze/silver/gold ETL pipeline;
 - a Polars feature pipeline;
 - a heterogeneous-to-transaction graph builder;
 - a GraphSAGE-style relational encoder;
 - tabular and hybrid fraud models;
 - calibration and conformal triage;
+- fairness governance reports;
+- local federated training scaffolding;
+- a built-in dashboard for operations review;
 - a DuckDB-backed replay and audit layer;
 - CLI and FastAPI entry points.
 
 ## Demo flow
 
 1. Generate a synthetic transaction history with injected fraud patterns.
-2. Ingest and normalize raw records through the ETL pipeline when source data arrives externally.
+2. Prepare public datasets or ingest external raw records through the ETL pipeline.
 3. Build temporal and behavioral features.
 4. Construct a relational graph between transactions and shared entities.
-5. Train a tabular or hybrid model.
+5. Train a tabular, hybrid, or federated baseline model.
 6. Calibrate the model and fit a conformal triage layer.
-7. Score new transactions and record each decision for replay.
-8. Render plain-English audit reports for non-technical stakeholders.
+7. Run fairness audits over sensitive groups when required.
+8. Score new transactions and record each decision for replay.
+9. Review ETL lineage, governance outputs, and audit history in the dashboard.
+10. Render plain-English audit reports for non-technical stakeholders.
 
 ## Experiments
 
@@ -192,7 +297,12 @@ The FastAPI app exposes:
 - `POST /predict`
 - `GET /replay/{decision_id}`
 - `GET /audit/{decision_id}`
+- `GET /datasets/status`
 - `GET /etl/status`
+- `GET /fairness/status`
+- `GET /federated/status`
+- `GET /dashboard`
+- `GET /dashboard/summary`
 - `GET /metrics/latest`
 - `GET /models/current`
 
@@ -214,10 +324,14 @@ To keep the repo aligned with shipped behavior:
 
 Current MVP:
 
+- public dataset adapters;
 - auditable ETL ingestion and feature loading;
 - synthetic data generation;
 - feature engineering;
 - graph-aware hybrid training;
+- fairness audit reporting;
+- local federated training scaffolding;
+- enterprise-style operations dashboard;
 - calibration and conformal decision bands;
 - deterministic replay and audit reporting.
 
@@ -226,7 +340,7 @@ Next iterations:
 - stronger temporal graph models;
 - richer counterfactuals;
 - PDF report export;
-- dashboarding and experiment notebooks.
+- experiment notebooks and additional public dataset benchmarks.
 
 ## Contributing
 

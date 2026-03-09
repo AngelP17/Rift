@@ -14,6 +14,17 @@ pytest
 - preserve replayability for decision records;
 - keep audit-facing language understandable to non-technical readers.
 
+## Open-source and zero-cost policy
+
+Rift's core path must remain open-source and zero-cost to run.
+
+That means:
+
+- do not introduce required paid cloud services for core workflows;
+- do not make proprietary SDKs or closed-source platforms mandatory;
+- prefer local-first OSS components such as Parquet, DuckDB, FastAPI, Polars, and scikit-learn;
+- keep optional integrations optional and document the local fallback path.
+
 ## Documentation policy
 
 Documentation changes are required whenever shipped behavior changes.
@@ -23,6 +34,8 @@ Please update the relevant Markdown files when you change:
 - CLI commands or flags;
 - API endpoints or payloads;
 - audit or replay behavior;
+- dashboard behavior;
+- dataset adapters or governance workflows;
 - setup instructions;
 - model or artifact expectations that users rely on.
 

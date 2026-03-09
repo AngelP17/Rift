@@ -8,7 +8,10 @@ import polars as pl
 import typer
 
 from rift.data.generator import generate_transactions
+from rift.datasets.adapters import list_prepared_datasets, prepare_public_dataset
 from rift.etl.pipeline import list_etl_runs, run_etl_pipeline
+from rift.federated.simulation import list_federated_runs, train_federated_model
+from rift.governance.fairness import list_fairness_audits, run_fairness_audit
 from rift.explain.report import build_audit_report, build_explanation, report_to_markdown
 from rift.models.infer import load_run, payload_to_frame, score_frame
 from rift.models.train import train_from_frame
@@ -21,7 +24,24 @@ from rift.utils.io import read_json
 
 app = typer.Typer(help="Rift: graph ML for fraud detection, replay, and audit.")
 etl_app = typer.Typer(help="Auditable ETL pipelines for transaction and government-style source data.")
+dataset_app = typer.Typer(help="Prepare public datasets into Rift's canonical schema.")
+fairness_app = typer.Typer(help="Run governance and fairness audits on scored datasets.")
+federated_app = typer.Typer(help="Zero-cost local federated training scaffolding.")
 app.add_typer(etl_app, name="etl")
+app.add_typer(dataset_app, name="dataset")
+app.add_typer(fairness_app, name="fairness")
+app.add_typer(federated_app, name="federated")
+
+
+def _read_frame(path: Path) -> pl.DataFrame:
+    suffix = path.suffix.lower()
+    if suffix == ".parquet":
+        return pl.read_parquet(path)
+    if suffix == ".csv":
+        return pl.read_csv(path, try_parse_dates=True)
+    if suffix == ".json":
+        return pl.read_json(path)
+    raise typer.BadParameter(f"unsupported data format: {path.suffix}")
 
 
 @app.command()
@@ -157,6 +177,90 @@ def etl_run(
 def etl_status(limit: int = typer.Option(10, min=1, max=100)) -> None:
     paths = get_paths()
     typer.echo(json.dumps(list_etl_runs(paths.warehouse_db, limit=limit), indent=2, default=str))
+
+
+@dataset_app.command("prepare")
+def dataset_prepare(
+    adapter: str = typer.Option(..., help="Supported: ieee_cis, credit_card_fraud"),
+    source: Path = typer.Option(..., "--source", exists=True, readable=True),
+    auto_etl: bool = typer.Option(True, help="Run the ETL pipeline after preparing the canonical dataset."),
+) -> None:
+    paths = get_paths()
+    summary = prepare_public_dataset(source=source, adapter=adapter, paths=paths, auto_etl=auto_etl)
+    typer.echo(json.dumps(summary.to_dict(), indent=2))
+
+
+@dataset_app.command("status")
+def dataset_status(limit: int = typer.Option(10, min=1, max=100)) -> None:
+    paths = get_paths()
+    typer.echo(json.dumps(list_prepared_datasets(paths, limit=limit), indent=2))
+
+
+@fairness_app.command("audit")
+def fairness_audit(
+    sensitive_column: str = typer.Option(..., "--sensitive-column"),
+    data_path: Path | None = typer.Option(None, "--data-path"),
+    run_id: str | None = typer.Option(None, "--run-id"),
+    threshold: float = typer.Option(0.5, min=0.0, max=1.0),
+) -> None:
+    paths = get_paths()
+    source = data_path or paths.data_path
+    frame = _read_frame(source)
+    summary = run_fairness_audit(
+        frame=frame,
+        paths=paths,
+        sensitive_column=sensitive_column,
+        run_id=run_id,
+        threshold=threshold,
+        data_path=str(source),
+    )
+    typer.echo(json.dumps(summary.to_dict(), indent=2))
+
+
+@fairness_app.command("status")
+def fairness_status(limit: int = typer.Option(10, min=1, max=100)) -> None:
+    paths = get_paths()
+    typer.echo(json.dumps(list_fairness_audits(paths, limit=limit), indent=2, default=str))
+
+
+@federated_app.command("train")
+def federated_train(
+    data_path: Path | None = typer.Option(None, "--data-path"),
+    client_column: str = typer.Option("channel", "--client-column"),
+    rounds: int = typer.Option(5, min=1, max=100),
+    local_epochs: int = typer.Option(3, min=1, max=100),
+    learning_rate: float = typer.Option(0.1, min=0.0001, max=10.0),
+    time_split: bool = typer.Option(False),
+) -> None:
+    paths = get_paths()
+    source = data_path or paths.data_path
+    frame = _read_frame(source)
+    summary = train_federated_model(
+        frame=frame,
+        paths=paths,
+        client_column=client_column,
+        rounds=rounds,
+        local_epochs=local_epochs,
+        learning_rate=learning_rate,
+        time_split=time_split,
+    )
+    typer.echo(json.dumps(summary.to_dict(), indent=2))
+
+
+@federated_app.command("status")
+def federated_status(limit: int = typer.Option(10, min=1, max=100)) -> None:
+    paths = get_paths()
+    typer.echo(json.dumps(list_federated_runs(paths, limit=limit), indent=2))
+
+
+@app.command()
+def dashboard(
+    host: str = typer.Option("127.0.0.1"),
+    port: int = typer.Option(8000, min=1, max=65535),
+) -> None:
+    import uvicorn
+
+    uvicorn.run("rift.api.server:app", host=host, port=port, reload=False)
 
 
 if __name__ == "__main__":

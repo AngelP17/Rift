@@ -79,6 +79,19 @@ For each ETL run, Rift stores:
 
 Sensitive fields such as names, email addresses, and taxpayer identifiers are hashed before the silver layer is written.
 
+## Fairness and governance review
+
+Rift can also generate fairness audit reports for a chosen sensitive column.
+
+These reports summarize:
+
+- group-level selection rates;
+- demographic parity difference;
+- disparate impact ratio;
+- equal opportunity difference when labels are present.
+
+The reports are written locally under `.rift/governance/fairness/` and summarized in the built-in dashboard.
+
 ## What is currently stored
 
 The MVP stores decision records in DuckDB tables for:
@@ -114,6 +127,8 @@ You can also fetch these through the API:
 
 - `GET /replay/{decision_id}`
 - `GET /audit/{decision_id}`
+- `GET /fairness/status`
+- `GET /dashboard`
 
 Example wording:
 

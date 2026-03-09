@@ -3,9 +3,14 @@ from __future__ import annotations
 import json
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 
 from rift.data.schemas import PredictionRequest
+from rift.dashboard.views import build_dashboard_html, dashboard_snapshot
+from rift.datasets.adapters import list_prepared_datasets
 from rift.etl.pipeline import list_etl_runs
+from rift.federated.simulation import list_federated_runs
+from rift.governance.fairness import list_fairness_audits
 from rift.explain.report import build_audit_report, build_explanation, report_to_markdown
 from rift.models.infer import load_run, payload_to_frame, score_frame
 from rift.replay.hashing import decision_hash
@@ -86,3 +91,28 @@ def current_model() -> dict:
 @app.get("/etl/status")
 def etl_status(limit: int = 10) -> list[dict]:
     return list_etl_runs(get_paths().warehouse_db, limit=limit)
+
+
+@app.get("/datasets/status")
+def datasets_status(limit: int = 10) -> list[dict]:
+    return list_prepared_datasets(get_paths(), limit=limit)
+
+
+@app.get("/fairness/status")
+def fairness_status(limit: int = 10) -> list[dict]:
+    return list_fairness_audits(get_paths(), limit=limit)
+
+
+@app.get("/federated/status")
+def federated_status(limit: int = 10) -> list[dict]:
+    return list_federated_runs(get_paths(), limit=limit)
+
+
+@app.get("/dashboard/summary")
+def dashboard_summary() -> dict:
+    return dashboard_snapshot(get_paths())
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard() -> HTMLResponse:
+    return HTMLResponse(build_dashboard_html(get_paths()))

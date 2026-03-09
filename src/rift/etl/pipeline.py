@@ -136,6 +136,23 @@ def _record_hash(row: dict[str, Any]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def _coerce_timestamp(value: Any) -> datetime | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        if value.tzinfo is not None:
+            return value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value
+    text = str(value).strip()
+    if not text:
+        return None
+    normalized = text.replace("Z", "+00:00")
+    parsed = datetime.fromisoformat(normalized)
+    if parsed.tzinfo is not None:
+        return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+    return parsed
+
+
 def _normalize_columns(frame: pl.DataFrame) -> pl.DataFrame:
     renamed = frame.rename({column: _canonicalize_name(column) for column in frame.columns})
     alias_renames = {
@@ -188,7 +205,7 @@ def _prepare_silver_frame(raw: pl.DataFrame, run_id: str, source_system: str) ->
         pl.col("account_id").cast(pl.Utf8).fill_null(DEFAULTS["account_id"]),
         pl.col("amount").cast(pl.Float64, strict=False),
         pl.col("currency").cast(pl.Utf8).fill_null(DEFAULTS["currency"]),
-        pl.col("timestamp").cast(pl.Utf8).str.to_datetime(strict=False),
+        pl.col("timestamp").map_elements(_coerce_timestamp, return_dtype=pl.Datetime),
         pl.col("lat").cast(pl.Float64, strict=False).fill_null(float(DEFAULTS["lat"])),
         pl.col("lon").cast(pl.Float64, strict=False).fill_null(float(DEFAULTS["lon"])),
         pl.col("channel").cast(pl.Utf8).fill_null(DEFAULTS["channel"]),
@@ -262,7 +279,36 @@ def _ensure_table(conn: duckdb.DuckDBPyConnection, table_name: str, parquet_path
 def _load_parquet_table(conn: duckdb.DuckDBPyConnection, table_name: str, parquet_path: Path, run_id: str) -> None:
     _ensure_table(conn, table_name, parquet_path)
     conn.execute(f"delete from {table_name} where etl_run_id = ?", [run_id])
-    conn.execute(f"insert into {table_name} select * from read_parquet(?)", [str(parquet_path)])
+    conn.execute(f"insert into {table_name} by name select * from read_parquet(?)", [str(parquet_path)])
+
+
+def _load_bronze_rows(conn: duckdb.DuckDBPyConnection, bronze_rows: pl.DataFrame, run_id: str) -> None:
+    existing = conn.execute(
+        "select count(*) from information_schema.tables where table_name = 'bronze_transactions'"
+    ).fetchone()[0]
+    expected_columns = ["etl_run_id", "source_system", "source_path", "source_row_number", "raw_record_json"]
+    if existing:
+        current_columns = [
+            row[1]
+            for row in conn.execute("pragma table_info('bronze_transactions')").fetchall()
+        ]
+        if current_columns != expected_columns:
+            conn.execute("drop table bronze_transactions")
+    conn.execute(
+        """
+        create table if not exists bronze_transactions (
+            etl_run_id varchar,
+            source_system varchar,
+            source_path varchar,
+            source_row_number bigint,
+            raw_record_json varchar
+        )
+        """
+    )
+    conn.execute("delete from bronze_transactions where etl_run_id = ?", [run_id])
+    conn.register("bronze_rows_view", bronze_rows.to_arrow())
+    conn.execute("insert into bronze_transactions by name select * from bronze_rows_view")
+    conn.unregister("bronze_rows_view")
 
 
 def _write_manifest(path: Path, manifest: dict[str, Any]) -> None:
@@ -288,6 +334,16 @@ def run_etl_pipeline(
         pl.lit(str(source)).alias("source_path"),
     )
     bronze.write_parquet(bronze_path)
+    bronze_rows = raw.with_row_index("source_row_number").with_columns(
+        pl.lit(run_id).alias("etl_run_id"),
+        pl.lit(source_system).alias("source_system"),
+        pl.lit(str(source)).alias("source_path"),
+    )
+    bronze_rows = bronze_rows.with_columns(
+        pl.struct(pl.exclude(["source_row_number", "etl_run_id", "source_system", "source_path"]))
+        .map_elements(lambda row: json.dumps(row, sort_keys=True, default=str), return_dtype=pl.Utf8)
+        .alias("raw_record_json")
+    ).select("etl_run_id", "source_system", "source_path", "source_row_number", "raw_record_json")
 
     silver, quality = _prepare_silver_frame(raw, run_id=run_id, source_system=source_system)
     gold = build_features(silver)
@@ -316,7 +372,7 @@ def run_etl_pipeline(
         )
         """
     )
-    _load_parquet_table(conn, "bronze_transactions", bronze_path, run_id)
+    _load_bronze_rows(conn, bronze_rows, run_id)
     _load_parquet_table(conn, "silver_transactions", silver_path, run_id)
     _load_parquet_table(conn, "gold_features", gold_path, run_id)
 
