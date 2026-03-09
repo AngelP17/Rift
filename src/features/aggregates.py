@@ -20,6 +20,8 @@ def compute_aggregate_features(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def _merchant_fraud_rate(df: pl.DataFrame) -> pl.DataFrame:
+    if "is_fraud" not in df.columns:
+        return df.with_columns(pl.lit(0.0).alias("merchant_fraud_rate"))
     rates = (
         df.group_by("merchant_id")
         .agg(pl.col("is_fraud").mean().alias("merchant_fraud_rate"))
