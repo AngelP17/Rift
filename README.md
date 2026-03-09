@@ -60,6 +60,31 @@ rift replay <decision_id>
 rift audit <decision_id> --format markdown
 ```
 
+## Current implemented surface
+
+The current MVP ships these CLI commands:
+
+- `rift generate`
+- `rift train`
+- `rift predict --tx <path>`
+- `rift replay <decision_id>`
+- `rift audit <decision_id> --format {markdown,json}`
+- `rift compare`
+- `rift export --format {markdown,json}`
+
+Supported training modes today:
+
+- `xgb_tabular`
+- `graphsage_only`
+- `graphsage_xgb`
+
+Artifacts are written under `.rift/` by default:
+
+- `.rift/data/transactions.parquet`
+- `.rift/runs/<run_id>/artifact.pkl`
+- `.rift/runs/<run_id>/metrics.json`
+- `.rift/audit/rift.duckdb`
+
 ## Architecture
 
 Rift ships with:
@@ -122,6 +147,14 @@ Run it locally with:
 ```bash
 uvicorn rift.api.server:app --reload
 ```
+
+## Documentation conventions
+
+To keep the repo aligned with shipped behavior:
+
+- update Markdown/docs whenever CLI, API, audit output, or workflow behavior changes;
+- use Mermaid blocks for all diagrams;
+- do not add ASCII art diagrams to docs.
 
 ## Roadmap
 

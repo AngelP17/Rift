@@ -24,6 +24,20 @@ rift replay <decision_id>
 
 Replay fetches the stored transaction, features, model references, and prediction record from DuckDB and verifies the stored output.
 
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant CLI as Rift CLI
+    participant DB as DuckDB Audit Store
+    participant R as Replay Result
+
+    U->>CLI: rift replay <decision_id>
+    CLI->>DB: fetch stored payload, prediction, and report
+    DB-->>CLI: return recorded decision receipt
+    CLI-->>R: render stored replay output
+    R-->>U: same decision, explanation, and report
+```
+
 ## What "confidence" means
 
 Confidence in Rift is not just the raw model score. It combines:
@@ -39,6 +53,18 @@ Confidence in Rift is not just the raw model score. It combines:
 
 The MVP stores synthetic data by default. When real data is used, personal information should be redacted before export. The audit export functions are structured so sensitive fields can be filtered before they leave the audit store.
 
+## What is currently stored
+
+The MVP stores decision records in DuckDB tables for:
+
+- transactions
+- features
+- predictions
+- audit_reports
+- replay_events
+
+Each stored prediction includes the payload, derived features, model run ID, calibrated probability, decision label, explanation, and report output.
+
 ## Example report
 
 An audit report includes:
@@ -50,6 +76,11 @@ An audit report includes:
 - top drivers
 - a plain-English explanation
 - replay instructions
+
+You can also fetch these through the API:
+
+- `GET /replay/{decision_id}`
+- `GET /audit/{decision_id}`
 
 Example wording:
 
