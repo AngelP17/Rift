@@ -5,6 +5,15 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+---
+
+## Executive Summary
+
+- **What it is:** An auditable fraud detection system that scores transactions with graph neural networks, calibrated probabilities, and conformal uncertainty bands.
+- **Who it's for:** ML engineers, fintech risk teams, auditors, and compliance reviewers (Big Four–style engagements).
+- **Key differentiator:** Every decision is recorded like a receipt; deterministic replay verifies the same outcome; plain-English reports for non-technical stakeholders.
+- **Regulatory alignment:** Documentation follows EU AI Act, NIST AI RMF, and audit best practices (see [docs/GOVERNANCE.md](docs/GOVERNANCE.md) and [docs/COMPLIANCE_MAPPINGS/](docs/COMPLIANCE_MAPPINGS/)).
+
 Rift is an auditable fraud detection system that combines graph neural networks, calibrated risk scoring, conformal uncertainty, deterministic replay, and plain-English audit reports.
 
 ```mermaid
@@ -59,6 +68,19 @@ rift replay <decision_id>
 rift export --since 90d --format markdown
 ```
 
+## CLI Reference
+
+| Command | Description |
+|---------|-------------|
+| `rift generate --txns N --fraud-rate R` | Generate synthetic transactions |
+| `rift train --model MODEL --time-split` | Train (xgb_tabular, graphsage_only, graphsage_xgb, gat_xgb) |
+| `rift predict FILE` | Predict fraud for transaction JSON |
+| `rift replay DECISION_ID` | Replay stored decision for audit |
+| `rift audit DECISION_ID --format markdown` | Generate audit report |
+| `rift compare --metrics pr_auc recall@0.01fpr ece` | Compare model metrics |
+| `rift export --since 90d --format markdown` | Export audit reports |
+| `rift governance generate-card --run-id latest` | Generate model card (Big Four style) |
+
 ## API
 
 ```bash
@@ -69,6 +91,10 @@ uvicorn rift.api.server:app --reload
 ## Demo flow
 
 ```bash
+# One-click full demo (generate, train, predict, export)
+bash scripts/full_demo.sh
+
+# Or step-by-step
 cd demo && bash full_audit.sh
 ```
 
@@ -91,6 +117,16 @@ See [docs/theory.md](docs/theory.md) for citations and theoretical grounding.
 - [x] DuckDB recorder, replay engine, audit reports
 - [ ] Temporal GNN (v2)
 - [ ] Fair conformal (group coverage)
+
+## Documentation Quality
+
+Rift documentation follows **Big Four standards** (Deloitte, PwC, EY, KPMG):
+
+- **Client-ready:** Executive summaries, clean formatting, consistent headings
+- **Regulatory mapping:** EU AI Act, NIST AI RMF (see [docs/COMPLIANCE_MAPPINGS/](docs/COMPLIANCE_MAPPINGS/))
+- **Governance:** Assumptions, limitations, known risks (see [docs/GOVERNANCE.md](docs/GOVERNANCE.md))
+- **Model cards:** Intended use, metrics, ethics, reproducibility (see [docs/MODEL_CARDS/](docs/MODEL_CARDS/))
+- **Traceability:** CHANGELOG, git history, decision IDs, replay
 
 ## License
 

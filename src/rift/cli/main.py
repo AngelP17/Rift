@@ -16,6 +16,10 @@ from rift.utils.seeds import set_seed
 app = typer.Typer(name="rift", help="Rift: Graph ML for Fraud Detection, Replay, and Audit")
 logger = setup_logging()
 
+# Governance sub-commands (Big Four model cards, etc.)
+from rift.cli.governance import governance_app
+app.add_typer(governance_app, name="governance")
+
 
 @app.command()
 def generate(
@@ -73,7 +77,7 @@ def train(
     typer.echo(f"Training complete. Metrics: {result['metrics']}")
 
 
-@app.command()
+@app.command("predict")
 def predict_cmd(
     input_file: Path = typer.Argument(..., help="Transaction JSON file"),
 ):

@@ -2,6 +2,16 @@
 
 *For non-technical auditors, compliance reviewers, and risk teams*
 
+---
+
+## Executive Summary (In Plain Language)
+
+- **Rift is a receipt-based fraud detector.** Every scoring decision is recorded like a receipt. You can look up any decision later and re-run it to confirm the same outcome.
+- **No technical expertise required.** Reports are written in plain English. Confidence levels (high-confidence fraud, review needed, high-confidence legitimate) are explained without jargon.
+- **Built for audit and compliance.** Aligned with EU AI Act, NIST AI RMF, and Big Four documentation standards. See [docs/GOVERNANCE.md](docs/GOVERNANCE.md) and [docs/COMPLIANCE_MAPPINGS/](docs/COMPLIANCE_MAPPINGS/) for regulatory mapping.
+
+---
+
 ## What the system does
 
 Rift is a fraud detection system that scores transactions and produces **auditable decisions**. Every decision is recorded like a receipt: you can later re-run the exact same inputs through the same model and get the same outcome. This supports compliance, governance, and dispute resolution.
@@ -71,6 +81,17 @@ Recommend blocking and manual investigation.
 ## Replay
 To verify: rift replay a1b2c3d4...
 ```
+
+---
+
+## Regulatory & Standards
+
+| Standard | Rift Alignment |
+|----------|-----------------|
+| EU AI Act (high-risk) | [docs/COMPLIANCE_MAPPINGS/eu_ai_act_high_risk_mapping.md](docs/COMPLIANCE_MAPPINGS/eu_ai_act_high_risk_mapping.md) |
+| NIST AI RMF | [docs/COMPLIANCE_MAPPINGS/nist_ai_rmf_mapping.md](docs/COMPLIANCE_MAPPINGS/nist_ai_rmf_mapping.md) |
+| ISO 42001 (AIMS) | [docs/COMPLIANCE_MAPPINGS/iso_42001_mapping.md](docs/COMPLIANCE_MAPPINGS/iso_42001_mapping.md) |
+| Governance & Ethics | [docs/GOVERNANCE.md](docs/GOVERNANCE.md) |
 
 ---
 
