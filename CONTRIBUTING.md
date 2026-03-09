@@ -1,49 +1,69 @@
 # Contributing to Rift
 
-Thank you for your interest in contributing to Rift.
+## Development setup
 
-## Getting Started
+```bash
+python3 -m pip install -e ".[dev]"
+pytest
+```
 
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/<your-username>/Rift.git`
-3. Install dependencies: `pip install -e ".[dev]"`
-4. Set your Python path: `export PYTHONPATH=src`
+## Project principles
 
-## Development Workflow
+- keep the pipeline deterministic where possible;
+- prefer explicit data contracts over implicit assumptions;
+- preserve replayability for decision records;
+- keep audit-facing language understandable to non-technical readers.
 
-1. Create a branch: `git checkout -b feature/your-feature`
-2. Make your changes
-3. Run tests: `pytest tests/ -v`
-4. Run linting: `ruff check src/ tests/`
-5. Commit with a descriptive message
-6. Open a Pull Request
+## Open-source and zero-cost policy
 
-## Code Style
+Rift's core path must remain open-source and zero-cost to run.
 
-- We use [Ruff](https://github.com/astral-sh/ruff) for linting and formatting
-- Line length: 100 characters
-- Type hints are encouraged
-- Docstrings for public functions and classes
+That means:
 
-## Testing
+- do not introduce required paid cloud services for core workflows;
+- do not make proprietary SDKs or closed-source platforms mandatory;
+- prefer local-first OSS components such as Parquet, DuckDB, FastAPI, Polars, and scikit-learn;
+- keep optional integrations optional and document the local fallback path.
 
-- All new features should include tests in `tests/`
-- Run the full suite: `pytest tests/ -v --tb=short`
-- Aim for meaningful coverage of core logic
+When adding cloud-like architecture patterns:
 
-## Areas for Contribution
+- provide a zero-cost local equivalent first;
+- prefer checked-in infrastructure as code and scripts over manual setup steps;
+- make sure local validation remains possible without vendor credentials.
 
-- Temporal GNN extension (TGAT)
-- Additional fraud patterns in the generator
-- PDF export for audit reports
-- Performance optimization for large graphs
-- Documentation improvements
-- Additional test coverage
+When adding governance features:
 
-## Reporting Issues
+- prefer generated artifacts over handwritten status notes where possible;
+- keep model cards, drift reports, and fairness outputs reproducible from local artifacts;
+- ensure governance templates remain usable without hosted model registries.
 
-Please open a GitHub issue with:
-- A clear description of the problem
-- Steps to reproduce
-- Expected vs actual behavior
-- Python version and OS
+## Documentation policy
+
+Documentation changes are required whenever shipped behavior changes.
+
+Please update the relevant Markdown files when you change:
+
+- CLI commands or flags;
+- API endpoints or payloads;
+- audit or replay behavior;
+- dashboard behavior;
+- dataset adapters or governance workflows;
+- storage backends, orchestration, or lakehouse behavior;
+- model cards, drift monitoring, sector profiles, or query features;
+- setup instructions;
+- model or artifact expectations that users rely on.
+
+For diagrams:
+
+- use Mermaid fenced blocks only;
+- do not add ASCII art diagrams.
+
+## Pull requests
+
+Please include:
+
+- a summary of the behavior change;
+- tests for new functionality;
+- notes about any artifact or schema changes;
+- screenshots or example output for audit/reporting changes when relevant;
+- corresponding doc updates when the change affects users or contributors.

@@ -1,0 +1,18 @@
+name: healthcare
+source_system: healthcare_claims
+field_aliases:
+  claim_id: tx_id
+  patient_id: user_id
+  provider_id: merchant_id
+  claim_amount: amount
+  claim_timestamp: timestamp
+privacy_masks:
+  - patient_name
+  - patient_email
+  - patient_phone
+  - diagnosis_code
+added_columns:
+  channel: claims_portal
+  mcc: healthcare_claim
+  currency: USD
+  sector: healthcare

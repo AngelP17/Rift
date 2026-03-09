@@ -1,139 +1,155 @@
-# Rift Audit Guide
+# Audit Guide
 
-This guide explains Rift's decision system in plain language. It is written for risk teams, auditors, compliance reviewers, and anyone who needs to understand how Rift makes and records fraud decisions without reading model code.
+Rift records every model decision like a receipt. That receipt can be replayed later to verify the same outcome and explanation without needing to inspect model code.
 
----
+## What the system does
 
-## What the System Does
+Rift scores a transaction for fraud risk, calibrates that score so it behaves more like a usable probability, and then assigns one of three operational outcomes:
 
-Rift analyzes financial transactions to detect potential fraud. For each transaction, it produces:
+- `high_confidence_fraud`
+- `review_needed`
+- `high_confidence_legit`
 
-- A **risk score** between 0 and 1 (higher means more likely fraud)
-- A **confidence level** indicating how certain the system is
-- A **recommendation** (block, review, or approve)
-- A **plain-English explanation** of why the decision was made
+## What a decision ID means
 
-## What a Decision ID Is
+Each prediction is stored with a deterministic SHA-256 decision ID. The ID is computed from a canonical JSON record of the transaction payload, model run, prediction, and explanation.
 
-Every time Rift evaluates a transaction, it creates a unique **Decision ID** (e.g., `DEC_A1B2C3D4E5F6`). This ID is like a receipt number. It permanently links the transaction, the risk score, the explanation, and all the model versions used at that moment.
+## How to replay a decision
 
-You can use a Decision ID to:
-- Look up what happened
-- Replay the decision to verify it produces the same result
-- Generate an audit report
-
-## How to Replay a Decision
-
-Replaying means re-running the exact same computation to verify the outcome has not changed. This is important for regulatory compliance and internal reviews.
+Use the CLI:
 
 ```bash
-rift replay DEC_A1B2C3D4E5F6
+rift replay <decision_id>
 ```
 
-Or via API:
+Replay fetches the stored transaction, features, model references, and prediction record from DuckDB and verifies the stored output.
 
-```
-GET /replay/DEC_A1B2C3D4E5F6
-```
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant CLI as Rift CLI
+    participant DB as DuckDB Audit Store
+    participant R as Replay Result
 
-The replay system will:
-1. Retrieve the original transaction data
-2. Load the exact model and calibration artifacts that were used
-3. Re-run the prediction
-4. Compare the result with the stored decision
-5. Report whether they match
-
-**A match means the decision is deterministically reproducible.**
-
-## What "Confidence" Means
-
-Rift does not just say "fraud" or "not fraud." It assigns one of three confidence levels:
-
-| Level | What It Means | Typical Action |
-|---|---|---|
-| **High Confidence Fraud** | The system is very sure this is fraudulent | Block and investigate |
-| **Review Needed** | The system is uncertain | Send to an analyst for manual review |
-| **High Confidence Legitimate** | The system is very sure this is normal | Approve automatically |
-
-These levels are determined by a statistical method called **conformal prediction** that provides a mathematical guarantee: the system's confidence bands cover the true outcome at least 95% of the time.
-
-## What "Review Needed" Means
-
-"Review needed" means the system detected mixed signals. For example:
-- The amount is unusual, but the device and location are normal
-- The merchant is high-risk, but the user has shopped there before
-- The transaction matches some fraud patterns but not enough for high confidence
-
-When you see "Review needed," it means a human analyst should look at the case and the explanation before making a final decision.
-
-## What Factors Go Into an Explanation
-
-Each explanation is built from several layers:
-
-1. **Feature importance (SHAP):** Which measurable factors most influenced the risk score. For example: "Transaction amount was 5 standard deviations above user average" or "Device is shared by 3 users."
-
-2. **Similar past cases:** The system finds historical transactions that looked similar and reports whether they turned out to be fraudulent or legitimate.
-
-3. **Counterfactual analysis:** What would have needed to be different for the decision to change. For example: "If the amount had been under $200, the decision would have been 'approve.'"
-
-4. **Narrative summary:** All of the above is combined into a plain-English paragraph.
-
-## How Personal Details Are Redacted
-
-When generating reports for external review, Rift can automatically redact personally identifiable information (PII):
-
-- User IDs are replaced with `[REDACTED]`
-- Device IDs are replaced with `[REDACTED]`
-- Account IDs are replaced with `[REDACTED]`
-- Geographic coordinates are replaced with `[REDACTED]`
-
-To generate a redacted report, the audit export system automatically applies redaction rules before output.
-
-## Sample Report
-
-```
-# Audit Report: DEC_A1B2C3D4E5F6
-
-**Decision Time:** 2024-03-15T14:30:00
-**Outcome:** FLAGGED AS FRAUD
-**Confidence Level:** High
-**Calibrated Score:** 0.9231
-
-## Summary
-
-This transaction was flagged as likely fraudulent. The calibrated risk
-score is 92.31%. Key factors: Location was 487.3 km from the user's
-usual area (increased risk); User made 12 transactions in the last
-hour (increased risk); Transaction amount was $4,523.00 (increased risk).
-
-## Top Risk Drivers
-
-1. Location was 487.3 km from the user's usual area (increased risk)
-2. User made 12 transactions in the last hour (increased risk)
-3. Transaction amount was $4,523.00 (increased risk)
-4. Device is shared by 3 users (increased risk)
-5. Merchant has a 8.5% historical fraud rate (increased risk)
-
-## Similar Historical Cases
-
-- Transaction TX_89A2BC (fraudulent, similarity: 0.94)
-- Transaction TX_F123DE (fraudulent, similarity: 0.89)
-- Transaction TX_456789 (legitimate, similarity: 0.87)
-
-## Counterfactual Analysis
-
-The decision would change if: dist_from_centroid decreased,
-tx_count_1h decreased, amount decreased.
-
-## Recommendation
-
-Block transaction and escalate to fraud investigation team.
-
-## How to Replay This Decision
-
-Run: rift replay DEC_A1B2C3D4E5F6
+    U->>CLI: rift replay <decision_id>
+    CLI->>DB: fetch stored payload, prediction, and report
+    DB-->>CLI: return recorded decision receipt
+    CLI-->>R: render stored replay output
+    R-->>U: same decision, explanation, and report
 ```
 
----
+## What "confidence" means
 
-Rift records every model decision like a receipt. That receipt can be replayed later to verify the same outcome and explanation. This helps risk teams, auditors, and compliance reviewers understand what happened without needing to read model code.
+Confidence in Rift is not just the raw model score. It combines:
+
+1. a calibrated probability, and
+2. a conformal prediction band that indicates whether the system is confident enough to make a direct decision.
+
+## What "review needed" means
+
+`review_needed` means the model did not have enough evidence to place the transaction confidently into a single class. The transaction should be routed to manual review rather than silently approved or blocked.
+
+## How personal data is redacted
+
+The MVP stores synthetic data by default. When real data is used, personal information should be redacted before export. The audit export functions are structured so sensitive fields can be filtered before they leave the audit store.
+
+## How source provenance is tracked
+
+Rift now includes an ETL lineage layer for raw operational data.
+
+```mermaid
+flowchart LR
+    A[Raw Source File] --> B[Bronze Snapshot]
+    A --> C[Silver Canonical Transactions]
+    C --> D[Gold Features]
+    B --> E[DuckDB ETL Warehouse]
+    C --> E
+    D --> E
+    E --> F[Lineage Manifest]
+    F --> G[Training and Audit Workflows]
+```
+
+For each ETL run, Rift stores:
+
+- the source path and source system;
+- extracted, valid, invalid, and loaded row counts;
+- bronze, silver, and gold artifact paths;
+- a lineage manifest JSON file;
+- warehouse status in DuckDB.
+
+Sensitive fields such as names, email addresses, and taxpayer identifiers are hashed before the silver layer is written.
+
+## Fairness and governance review
+
+Rift can also generate fairness audit reports for a chosen sensitive column.
+
+These reports summarize:
+
+- group-level selection rates;
+- demographic parity difference;
+- disparate impact ratio;
+- equal opportunity difference when labels are present.
+
+The reports are written locally under `.rift/governance/fairness/` and summarized in the built-in dashboard.
+
+## Model cards and drift reports
+
+Rift can generate model cards for trained runs and drift reports for monitoring comparisons.
+
+These artifacts are intended for:
+
+- compliance handoff;
+- model review meetings;
+- audit prep;
+- non-technical governance summaries.
+
+They are written locally under:
+
+- `.rift/governance/model_cards/`
+- `.rift/governance/drift/`
+
+## What is currently stored
+
+The MVP stores decision records in DuckDB tables for:
+
+- transactions
+- features
+- predictions
+- audit_reports
+- replay_events
+
+The ETL warehouse stores:
+
+- etl_runs
+- bronze_transactions
+- silver_transactions
+- gold_features
+
+The local lakehouse layer also provides SQL views over current transaction and feature snapshots so teams can inspect operational state without exporting data into a paid warehouse.
+
+Each stored prediction includes the payload, derived features, model run ID, calibrated probability, decision label, explanation, and report output.
+
+## Example report
+
+An audit report includes:
+
+- decision ID
+- decision time
+- outcome
+- calibrated fraud probability
+- top drivers
+- a plain-English explanation
+- replay instructions
+
+You can also fetch these through the API:
+
+- `GET /replay/{decision_id}`
+- `GET /audit/{decision_id}`
+- `GET /fairness/status`
+- `GET /monitor/drift-status`
+- `GET /query`
+- `GET /dashboard`
+
+Example wording:
+
+> This transaction was flagged because it came from a new device, was far from the user's recent activity centroid, and followed an elevated transaction velocity window. The system is confident enough to recommend manual review or intervention depending on policy.
