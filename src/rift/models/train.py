@@ -9,7 +9,7 @@ import numpy as np
 import polars as pl
 
 from rift.data.splits import DatasetSplit, chronological_split, random_split
-from rift.features.engine import build_features, feature_columns
+from rift.features.engine import build_features, extract_categorical_mappings, feature_columns
 from rift.graph.builder import build_transaction_graph
 from rift.models.baseline_xgb import TabularXGBoostModel
 from rift.models.calibrate import ProbabilityCalibrator
@@ -17,6 +17,8 @@ from rift.models.conformal import ConformalClassifier
 from rift.models.ensemble import GraphHybridModel
 from rift.models.graphsage import GraphSAGEEncoder, GraphSAGEOnlyModel
 from rift.models.metrics import brier, expected_calibration_error, pr_auc, recall_at_fpr
+from rift.mlops.mlflow_tracker import log_run_metrics
+from rift.optimize.green import apply_green_optimization
 from rift.utils.io import write_json, write_pickle
 
 
@@ -47,8 +49,11 @@ def train_from_frame(
     model_type: str = "graphsage_xgb",
     time_split: bool = False,
     calibration_method: str = "isotonic",
+    sector_profile: str = "fintech",
+    optimize_mode: str = "standard",
 ) -> ModelRunSummary:
     feat = build_features(frame)
+    categorical_mappings = extract_categorical_mappings(feat)
     split = _split_frame(feat, time_split=time_split)
     columns = feature_columns(feat)
     train_x = _select(split.train, columns)
@@ -66,6 +71,7 @@ def train_from_frame(
         "model_type": model_type,
         "feature_columns": columns,
         "trained_at": datetime.now(timezone.utc).isoformat(),
+        "sector_profile": sector_profile,
     }
 
     if model_type == "xgb_tabular":
@@ -106,6 +112,7 @@ def train_from_frame(
     }
     artifact["calibrator"] = calibrator
     artifact["conformal"] = conformal
+    artifact["categorical_mappings"] = categorical_mappings
     artifact["train_reference"] = {
         "features": train_x[:500].tolist(),
         "labels": train_y[:500].tolist(),
@@ -116,6 +123,7 @@ def train_from_frame(
     run_dir = runs_dir / run_id
     artifact_path = run_dir / "artifact.pkl"
     metadata_path = run_dir / "metrics.json"
+    artifact, optimization = apply_green_optimization(artifact, optimize_mode)
     write_pickle(artifact_path, artifact)
     write_json(
         metadata_path,
@@ -126,8 +134,37 @@ def train_from_frame(
             "feature_columns": columns,
             "time_split": time_split,
             "calibration_method": calibration_method,
+            "sector_profile": sector_profile,
+            "optimization": optimization,
         },
     )
+    mlflow_run_id = log_run_metrics(
+        tracking_dir=runs_dir.parent / "mlruns",
+        experiment_name="rift-training",
+        run_name=run_id,
+        params={
+            "model_type": model_type,
+            "time_split": time_split,
+            "calibration_method": calibration_method,
+            "sector_profile": sector_profile,
+            "optimize_mode": optimize_mode,
+        },
+        metrics=metrics,
+        tags={"component": "training"},
+    )
+    if mlflow_run_id is not None:
+        metadata = {
+            "run_id": run_id,
+            "model_type": model_type,
+            "metrics": metrics,
+            "feature_columns": columns,
+            "time_split": time_split,
+            "calibration_method": calibration_method,
+                "sector_profile": sector_profile,
+                "optimization": optimization,
+            "mlflow_run_id": mlflow_run_id,
+        }
+        write_json(metadata_path, metadata)
     write_json(runs_dir / "current_run.json", {"run_id": run_id, "artifact_path": str(artifact_path)})
     return ModelRunSummary(
         run_id=run_id,

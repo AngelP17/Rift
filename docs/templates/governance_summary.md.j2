@@ -1,0 +1,33 @@
+# Governance Summary for {{ run_id }}
+
+## Model
+
+- Model type: `{{ model_type }}`
+- Generated at: `{{ generated_at }}`
+
+## Latest fairness audit
+
+{% if latest_fairness %}
+- Audit ID: `{{ latest_fairness.audit_id }}`
+- Sensitive column: `{{ latest_fairness.sensitive_column }}`
+- Demographic parity difference: {{ latest_fairness.demographic_parity_difference }}
+- Disparate impact ratio: {{ latest_fairness.disparate_impact_ratio }}
+{% else %}
+- No fairness audit available.
+{% endif %}
+
+## Latest drift audit
+
+{% if latest_drift %}
+- Report ID: `{{ latest_drift.report_id }}`
+- Drift detected: `{{ latest_drift.is_drift }}`
+- Drift score: {{ latest_drift.drift_score }}
+{% else %}
+- No drift audit available.
+{% endif %}
+
+## Governance posture
+
+- Replayable decision lineage is enabled.
+- Audit reports are generated locally.
+- Core workflows remain open-source and zero-cost.

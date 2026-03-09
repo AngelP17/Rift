@@ -1,15 +1,27 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 
+from rift.lakehouse.sql import build_default_views, query_lakehouse
 from rift.data.schemas import PredictionRequest
+from rift.dashboard.views import build_dashboard_html, dashboard_snapshot
+from rift.datasets.adapters import list_prepared_datasets
+from rift.etl.pipeline import list_etl_runs
+from rift.federated.simulation import list_federated_runs
+from rift.governance.fairness import list_fairness_audits
+from rift.governance.model_cards import generate_model_card
+from rift.monitoring.drift import list_drift_reports
+from rift.monitoring.nl_query import answer_natural_language_query
 from rift.explain.report import build_audit_report, build_explanation, report_to_markdown
 from rift.models.infer import load_run, payload_to_frame, score_frame
 from rift.replay.hashing import decision_hash
 from rift.replay.recorder import record_decision
 from rift.replay.replayer import replay_decision
+from rift.storage.backends import get_storage_backend
 from rift.utils.config import get_paths
 from rift.utils.io import read_json
 
@@ -80,3 +92,64 @@ def current_model() -> dict:
     paths = get_paths()
     current = read_json(paths.runs_dir / "current_run.json")
     return {"run_id": current["run_id"], "artifact_path": current["artifact_path"]}
+
+
+@app.get("/etl/status")
+def etl_status(limit: int = 10) -> list[dict]:
+    return list_etl_runs(get_paths().warehouse_db, limit=limit)
+
+
+@app.get("/datasets/status")
+def datasets_status(limit: int = 10) -> list[dict]:
+    return list_prepared_datasets(get_paths(), limit=limit)
+
+
+@app.get("/fairness/status")
+def fairness_status(limit: int = 10) -> list[dict]:
+    return list_fairness_audits(get_paths(), limit=limit)
+
+
+@app.get("/federated/status")
+def federated_status(limit: int = 10) -> list[dict]:
+    return list_federated_runs(get_paths(), limit=limit)
+
+
+@app.get("/monitor/drift-status")
+def drift_status(limit: int = 10) -> list[dict]:
+    return list_drift_reports(get_paths(), limit=limit)
+
+
+@app.get("/query")
+def natural_query(natural: str) -> dict:
+    return answer_natural_language_query(get_paths(), natural).to_dict()
+
+
+@app.get("/dashboard/summary")
+def dashboard_summary() -> dict:
+    return dashboard_snapshot(get_paths())
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard() -> HTMLResponse:
+    return HTMLResponse(build_dashboard_html(get_paths()))
+
+
+@app.post("/governance/model-card/{run_id}")
+def model_card(run_id: str) -> dict:
+    return generate_model_card(get_paths(), run_id, repo_root=Path("/workspace")).to_dict()
+
+
+@app.get("/storage/status")
+def storage_status() -> dict:
+    return get_storage_backend(get_paths()).status().to_dict()
+
+
+@app.get("/lakehouse/status")
+def lakehouse_status() -> dict:
+    db_path = build_default_views(get_paths())
+    return {"lakehouse_db": str(db_path)}
+
+
+@app.get("/lakehouse/query")
+def lakehouse_query(sql: str, limit: int = 1000) -> dict:
+    return query_lakehouse(get_paths(), sql=sql, limit=limit).to_dict()

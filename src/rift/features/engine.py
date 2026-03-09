@@ -23,7 +23,10 @@ def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return 2.0 * radius_km * atan2(sqrt(a), sqrt(1.0 - a))
 
 
-def build_features(frame: pl.DataFrame) -> pl.DataFrame:
+def build_features(
+    frame: pl.DataFrame,
+    categorical_mappings: dict[str, dict[str, int]] | None = None,
+) -> pl.DataFrame:
     ordered = frame.sort("timestamp")
     rows = ordered.to_dicts()
 
@@ -101,11 +104,25 @@ def build_features(frame: pl.DataFrame) -> pl.DataFrame:
         merchant_stats[merchant_id]["fraud"] += int(row["is_fraud"])
 
     feature_frame = pl.DataFrame(feature_rows)
+    if categorical_mappings is not None:
+        return feature_frame.with_columns(
+            pl.col("channel").replace_strict(categorical_mappings["channel"], default=0, return_dtype=pl.UInt32).alias("channel_code"),
+            pl.col("mcc").replace_strict(categorical_mappings["mcc"], default=0, return_dtype=pl.UInt32).alias("mcc_code"),
+            pl.col("currency").replace_strict(categorical_mappings["currency"], default=0, return_dtype=pl.UInt32).alias("currency_code"),
+        )
     return feature_frame.with_columns(
         pl.col("channel").cast(pl.Categorical).to_physical().alias("channel_code"),
         pl.col("mcc").cast(pl.Categorical).to_physical().alias("mcc_code"),
         pl.col("currency").cast(pl.Categorical).to_physical().alias("currency_code"),
     )
+
+
+def extract_categorical_mappings(frame: pl.DataFrame) -> dict[str, dict[str, int]]:
+    mappings: dict[str, dict[str, int]] = {}
+    for str_col, code_col in [("channel", "channel_code"), ("mcc", "mcc_code"), ("currency", "currency_code")]:
+        pairs = frame.select(str_col, code_col).unique()
+        mappings[str_col] = dict(zip(pairs[str_col].to_list(), pairs[code_col].cast(int).to_list()))
+    return mappings
 
 
 def feature_columns(frame: pl.DataFrame) -> list[str]:

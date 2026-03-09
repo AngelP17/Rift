@@ -1,0 +1,10 @@
+name: fintech
+source_system: fintech
+field_aliases: {}
+privacy_masks:
+  - full_name
+  - email
+  - email_address
+  - phone
+added_columns:
+  sector: fintech
