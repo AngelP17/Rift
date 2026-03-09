@@ -28,8 +28,12 @@ def _paths(tmp_path: Path):
     return get_paths()
 
 
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
 def test_sector_profile_masks_and_aliases_healthcare() -> None:
-    repo_root = Path("/workspace")
+    repo_root = _repo_root()
     frame = pl.DataFrame(
         [
             {
@@ -83,7 +87,7 @@ def test_drift_monitor_and_model_card_generation(tmp_path: Path) -> None:
         threshold=0.05,
         trigger_retrain=False,
     )
-    card_summary = generate_model_card(paths, train_summary.run_id, repo_root=Path("/workspace"))
+    card_summary = generate_model_card(paths, train_summary.run_id, repo_root=_repo_root())
 
     assert Path(drift_summary.report_path).exists()
     assert Path(card_summary.model_card_path).exists()
@@ -151,7 +155,8 @@ def test_legacy_migration_simulation_and_configs_exist(tmp_path: Path) -> None:
     assert Path(summary.output_path).exists()
     assert summary.rows_loaded == 1
 
-    workflow = yaml.safe_load(Path("/workspace/.github/workflows/validate.yml").read_text(encoding="utf-8"))
-    hub = yaml.safe_load(Path("/workspace/docker/jupyterhub.yml").read_text(encoding="utf-8"))
+    root = _repo_root()
+    workflow = yaml.safe_load((root / ".github/workflows/validate.yml").read_text(encoding="utf-8"))
+    hub = yaml.safe_load((root / "docker/jupyterhub.yml").read_text(encoding="utf-8"))
     assert "jobs" in workflow
     assert "services" in hub

@@ -84,8 +84,12 @@ def test_end_to_end_pipeline_runner_creates_report(tmp_path: Path) -> None:
     assert summary.generated_rows == 600
 
 
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
 def test_airflow_dag_module_imports_safely() -> None:
-    dag_path = Path("/workspace/dags/rift_pipeline.py")
+    dag_path = _repo_root() / "dags/rift_pipeline.py"
     spec = importlib.util.spec_from_file_location("rift_pipeline", dag_path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -94,7 +98,7 @@ def test_airflow_dag_module_imports_safely() -> None:
 
 
 def test_docker_compose_file_is_valid_yaml() -> None:
-    compose_path = Path("/workspace/docker-compose.yml")
+    compose_path = _repo_root() / "docker-compose.yml"
     payload = yaml.safe_load(compose_path.read_text(encoding="utf-8"))
     assert "services" in payload
     assert "minio" in payload["services"]
