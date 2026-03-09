@@ -11,6 +11,7 @@ from rift.datasets.adapters import list_prepared_datasets
 from rift.etl.pipeline import list_etl_runs
 from rift.federated.simulation import list_federated_runs
 from rift.governance.fairness import list_fairness_audits
+from rift.storage.backends import get_storage_backend
 from rift.utils.config import RiftPaths
 from rift.utils.io import read_json
 
@@ -68,6 +69,7 @@ def dashboard_snapshot(paths: RiftPaths) -> dict[str, Any]:
     federated_runs = list_federated_runs(paths, limit=10)
     prepared_datasets = list_prepared_datasets(paths, limit=10)
     recent_audits = _recent_audits(paths, limit=10)
+    storage_status = get_storage_backend(paths).status().to_dict()
     return {
         "current_model": current_run,
         "current_metrics": current_metrics,
@@ -76,6 +78,7 @@ def dashboard_snapshot(paths: RiftPaths) -> dict[str, Any]:
         "federated_runs": federated_runs,
         "prepared_datasets": prepared_datasets,
         "recent_audits": recent_audits,
+        "storage_status": storage_status,
         "kpis": {
             "etl_runs": len(etl_runs),
             "fairness_audits": len(fairness_runs),
@@ -124,6 +127,7 @@ def build_dashboard_html(paths: RiftPaths) -> str:
     current_run = snapshot["current_model"]
     current_metrics = snapshot["current_metrics"]
     prepared_dataset_rows = [item.get("summary", {}) for item in snapshot["prepared_datasets"]]
+    storage_status = snapshot["storage_status"]
     hero = "No active model run"
     if current_run:
         hero = f"Current model run: {current_run['run_id']}"
@@ -244,7 +248,8 @@ def build_dashboard_html(paths: RiftPaths) -> str:
       </div>
       <div class="full panel">
         <h2>Operating notes</h2>
-        <p class="note">This dashboard is served locally from Rift's FastAPI application and reads only from local Parquet, DuckDB, and JSON artifacts under <code>.rift/</code>. No paid SaaS, proprietary cloud service, or closed-source UI dependency is required.</p>
+        <p class="note">Storage backend: <strong>{html.escape(str(storage_status.get("backend")))}</strong>. {html.escape(str(storage_status.get("details")))}</p>
+        <p class="note">This dashboard is served locally from Rift's FastAPI application and reads only from local Parquet, DuckDB, JSON artifacts, and optional MinIO-compatible object storage under <code>.rift/</code>. No paid SaaS, proprietary cloud service, or closed-source UI dependency is required.</p>
       </div>
     </section>
   </div>

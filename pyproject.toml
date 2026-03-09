@@ -29,7 +29,13 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "httpx",
+  "pyyaml",
   "pytest",
+]
+local-stack = [
+  "minio",
+  "mlflow",
+  "pyspark",
 ]
 
 [project.scripts]

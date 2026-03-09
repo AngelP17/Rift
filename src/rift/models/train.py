@@ -17,6 +17,7 @@ from rift.models.conformal import ConformalClassifier
 from rift.models.ensemble import GraphHybridModel
 from rift.models.graphsage import GraphSAGEEncoder, GraphSAGEOnlyModel
 from rift.models.metrics import brier, expected_calibration_error, pr_auc, recall_at_fpr
+from rift.mlops.mlflow_tracker import log_run_metrics
 from rift.utils.io import write_json, write_pickle
 
 
@@ -130,6 +131,29 @@ def train_from_frame(
             "calibration_method": calibration_method,
         },
     )
+    mlflow_run_id = log_run_metrics(
+        tracking_dir=runs_dir.parent / "mlruns",
+        experiment_name="rift-training",
+        run_name=run_id,
+        params={
+            "model_type": model_type,
+            "time_split": time_split,
+            "calibration_method": calibration_method,
+        },
+        metrics=metrics,
+        tags={"component": "training"},
+    )
+    if mlflow_run_id is not None:
+        metadata = {
+            "run_id": run_id,
+            "model_type": model_type,
+            "metrics": metrics,
+            "feature_columns": columns,
+            "time_split": time_split,
+            "calibration_method": calibration_method,
+            "mlflow_run_id": mlflow_run_id,
+        }
+        write_json(metadata_path, metadata)
     write_json(runs_dir / "current_run.json", {"run_id": run_id, "artifact_path": str(artifact_path)})
     return ModelRunSummary(
         run_id=run_id,

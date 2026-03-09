@@ -13,6 +13,9 @@ class RiftPaths:
     audit_db: Path
     runs_dir: Path
     datasets_dir: Path
+    storage_dir: Path
+    lakehouse_dir: Path
+    mlflow_dir: Path
     etl_dir: Path
     bronze_dir: Path
     silver_dir: Path
@@ -32,6 +35,9 @@ def get_paths() -> RiftPaths:
     audit_db = Path(os.getenv("RIFT_AUDIT_DB", home / "audit" / "rift.duckdb"))
     runs_dir = Path(os.getenv("RIFT_RUNS_DIR", home / "runs"))
     datasets_dir = Path(os.getenv("RIFT_DATASETS_DIR", home / "datasets"))
+    storage_dir = Path(os.getenv("RIFT_STORAGE_DIR", home / "storage"))
+    lakehouse_dir = Path(os.getenv("RIFT_LAKEHOUSE_DIR", home / "lakehouse"))
+    mlflow_dir = Path(os.getenv("RIFT_MLFLOW_DIR", home / "mlruns"))
     etl_dir = Path(os.getenv("RIFT_ETL_DIR", home / "etl"))
     bronze_dir = etl_dir / "bronze"
     silver_dir = etl_dir / "silver"
@@ -48,6 +54,9 @@ def get_paths() -> RiftPaths:
         audit_db.parent,
         runs_dir,
         datasets_dir,
+        storage_dir,
+        lakehouse_dir,
+        mlflow_dir,
         bronze_dir,
         silver_dir,
         gold_dir,
@@ -65,6 +74,9 @@ def get_paths() -> RiftPaths:
         audit_db=audit_db,
         runs_dir=runs_dir,
         datasets_dir=datasets_dir,
+        storage_dir=storage_dir,
+        lakehouse_dir=lakehouse_dir,
+        mlflow_dir=mlflow_dir,
         etl_dir=etl_dir,
         bronze_dir=bronze_dir,
         silver_dir=silver_dir,

@@ -5,6 +5,7 @@ import json
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 
+from rift.lakehouse.sql import build_default_views, query_lakehouse
 from rift.data.schemas import PredictionRequest
 from rift.dashboard.views import build_dashboard_html, dashboard_snapshot
 from rift.datasets.adapters import list_prepared_datasets
@@ -16,6 +17,7 @@ from rift.models.infer import load_run, payload_to_frame, score_frame
 from rift.replay.hashing import decision_hash
 from rift.replay.recorder import record_decision
 from rift.replay.replayer import replay_decision
+from rift.storage.backends import get_storage_backend
 from rift.utils.config import get_paths
 from rift.utils.io import read_json
 
@@ -116,3 +118,19 @@ def dashboard_summary() -> dict:
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard() -> HTMLResponse:
     return HTMLResponse(build_dashboard_html(get_paths()))
+
+
+@app.get("/storage/status")
+def storage_status() -> dict:
+    return get_storage_backend(get_paths()).status().to_dict()
+
+
+@app.get("/lakehouse/status")
+def lakehouse_status() -> dict:
+    db_path = build_default_views(get_paths())
+    return {"lakehouse_db": str(db_path)}
+
+
+@app.get("/lakehouse/query")
+def lakehouse_query(sql: str, limit: int = 1000) -> dict:
+    return query_lakehouse(get_paths(), sql=sql, limit=limit).to_dict()

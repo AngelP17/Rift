@@ -7,17 +7,21 @@ import duckdb
 import polars as pl
 import typer
 
+from rift.compute.spark_compat import spark_available, summarise_parquet_with_spark
 from rift.data.generator import generate_transactions
 from rift.datasets.adapters import list_prepared_datasets, prepare_public_dataset
+from rift.lakehouse.sql import build_default_views, query_lakehouse
 from rift.etl.pipeline import list_etl_runs, run_etl_pipeline
 from rift.federated.simulation import list_federated_runs, train_federated_model
 from rift.governance.fairness import list_fairness_audits, run_fairness_audit
+from rift.orchestration.pipeline import run_end_to_end_pipeline
 from rift.explain.report import build_audit_report, build_explanation, report_to_markdown
 from rift.models.infer import load_run, payload_to_frame, score_frame
 from rift.models.train import train_from_frame
 from rift.replay.hashing import decision_hash
 from rift.replay.recorder import record_decision
 from rift.replay.replayer import replay_decision
+from rift.storage.backends import get_storage_backend
 from rift.utils.config import get_paths
 from rift.utils.io import read_json
 
@@ -27,10 +31,18 @@ etl_app = typer.Typer(help="Auditable ETL pipelines for transaction and governme
 dataset_app = typer.Typer(help="Prepare public datasets into Rift's canonical schema.")
 fairness_app = typer.Typer(help="Run governance and fairness audits on scored datasets.")
 federated_app = typer.Typer(help="Zero-cost local federated training scaffolding.")
+storage_app = typer.Typer(help="Local and S3-compatible storage helpers.")
+lakehouse_app = typer.Typer(help="DuckDB lakehouse views and SQL queries over Parquet.")
+spark_app = typer.Typer(help="Optional Spark-compatible local compute helpers.")
+pipeline_app = typer.Typer(help="End-to-end orchestrated pipeline helpers.")
 app.add_typer(etl_app, name="etl")
 app.add_typer(dataset_app, name="dataset")
 app.add_typer(fairness_app, name="fairness")
 app.add_typer(federated_app, name="federated")
+app.add_typer(storage_app, name="storage")
+app.add_typer(lakehouse_app, name="lakehouse")
+app.add_typer(spark_app, name="spark")
+app.add_typer(pipeline_app, name="pipeline")
 
 
 def _read_frame(path: Path) -> pl.DataFrame:
@@ -261,6 +273,80 @@ def dashboard(
     import uvicorn
 
     uvicorn.run("rift.api.server:app", host=host, port=port, reload=False)
+
+
+@storage_app.command("status")
+def storage_status() -> None:
+    paths = get_paths()
+    backend = get_storage_backend(paths)
+    typer.echo(json.dumps(backend.status().to_dict(), indent=2))
+
+
+@storage_app.command("sync")
+def storage_sync(
+    object_name: str = typer.Option("data/current_transactions.parquet"),
+    source: Path | None = typer.Option(None, "--source"),
+) -> None:
+    paths = get_paths()
+    backend = get_storage_backend(paths)
+    frame = _read_frame(source or paths.data_path)
+    target = backend.save_parquet(frame, object_name)
+    typer.echo(json.dumps({"backend": backend.status().backend, "object_name": object_name, "target": target}, indent=2))
+
+
+@lakehouse_app.command("build")
+def lakehouse_build() -> None:
+    paths = get_paths()
+    db_path = build_default_views(paths)
+    typer.echo(json.dumps({"lakehouse_db": str(db_path)}, indent=2))
+
+
+@lakehouse_app.command("query")
+def lakehouse_query(
+    sql: str = typer.Option(..., "--sql"),
+    limit: int = typer.Option(1000, min=1, max=10000),
+) -> None:
+    paths = get_paths()
+    result = query_lakehouse(paths, sql=sql, limit=limit)
+    typer.echo(json.dumps(result.to_dict(), indent=2, default=str))
+
+
+@spark_app.command("summary")
+def spark_summary(
+    data_path: Path | None = typer.Option(None, "--data-path"),
+) -> None:
+    source = data_path or get_paths().data_path
+    typer.echo(
+        json.dumps(
+            {
+                "spark_available": spark_available(),
+                "summary": summarise_parquet_with_spark(source) if spark_available() else None,
+            },
+            indent=2,
+        )
+    )
+
+
+@pipeline_app.command("run")
+def pipeline_run(
+    txns: int = typer.Option(10_000, min=100),
+    users: int = typer.Option(1_000, min=10),
+    merchants: int = typer.Option(200, min=10),
+    fraud_rate: float = typer.Option(0.02, min=0.001, max=0.5),
+    model: str = typer.Option("graphsage_xgb"),
+    sample_tx: Path = typer.Option(Path("demo/sample_transaction.json"), "--sample-tx", exists=True, readable=True),
+) -> None:
+    paths = get_paths()
+    summary = run_end_to_end_pipeline(
+        paths=paths,
+        txns=txns,
+        users=users,
+        merchants=merchants,
+        fraud_rate=fraud_rate,
+        model_type=model,
+        sample_tx_path=sample_tx,
+    )
+    typer.echo(json.dumps(summary.to_dict(), indent=2))
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ import polars as pl
 
 from rift.data.splits import chronological_split, random_split
 from rift.features.engine import build_features, extract_categorical_mappings, feature_columns
+from rift.mlops.mlflow_tracker import log_run_metrics
 from rift.models.calibrate import ProbabilityCalibrator
 from rift.models.conformal import ConformalClassifier
 from rift.models.metrics import brier, expected_calibration_error, pr_auc, recall_at_fpr
@@ -194,6 +195,34 @@ def train_federated_model(
             "artifact_path": str(artifact_path),
         },
     )
+    mlflow_run_id = log_run_metrics(
+        tracking_dir=paths.mlflow_dir,
+        experiment_name="rift-federated",
+        run_name=run_id,
+        params={
+            "client_column": client_column,
+            "rounds": rounds,
+            "local_epochs": local_epochs,
+            "learning_rate": learning_rate,
+            "time_split": time_split,
+        },
+        metrics=metrics,
+        tags={"component": "federated"},
+    )
+    if mlflow_run_id is not None:
+        write_json(
+            metadata_path,
+            {
+                "run_id": run_id,
+                "client_column": client_column,
+                "rounds": rounds,
+                "local_epochs": local_epochs,
+                "client_count": len(unique_clients),
+                "metrics": metrics,
+                "artifact_path": str(artifact_path),
+                "mlflow_run_id": mlflow_run_id,
+            },
+        )
     write_json(paths.federated_dir / "current_federated_run.json", {"run_id": run_id, "artifact_path": str(artifact_path)})
     return FederatedRunSummary(
         run_id=run_id,

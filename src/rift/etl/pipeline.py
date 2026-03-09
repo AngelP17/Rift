@@ -11,6 +11,7 @@ import duckdb
 import polars as pl
 
 from rift.features.engine import build_features
+from rift.storage.backends import get_storage_backend
 from rift.utils.config import RiftPaths
 from rift.utils.io import write_json
 
@@ -102,6 +103,9 @@ class ETLRunSummary:
     gold_path: str
     manifest_path: str
     warehouse_db: str
+    bronze_object: str | None = None
+    silver_object: str | None = None
+    gold_object: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -322,6 +326,7 @@ def run_etl_pipeline(
     dataset_name: str = "transactions",
 ) -> ETLRunSummary:
     raw = _read_source(source)
+    storage = get_storage_backend(paths)
     run_id = f"etl_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')}"
     bronze_path = paths.bronze_dir / f"{run_id}_{dataset_name}.parquet"
     silver_path = paths.silver_dir / f"{run_id}_{dataset_name}.parquet"
@@ -350,6 +355,9 @@ def run_etl_pipeline(
     gold.write_parquet(gold_path)
     silver.write_parquet(silver_path)
     _write_current_snapshots(paths, silver, gold)
+    bronze_object = storage.save_parquet(bronze, f"etl/bronze/{bronze_path.name}")
+    silver_object = storage.save_parquet(silver, f"etl/silver/{silver_path.name}")
+    gold_object = storage.save_parquet(gold, f"etl/gold/{gold_path.name}")
 
     conn = duckdb.connect(str(paths.warehouse_db))
     conn.execute(
@@ -392,6 +400,9 @@ def run_etl_pipeline(
         gold_path=str(gold_path),
         manifest_path=str(manifest_path),
         warehouse_db=str(paths.warehouse_db),
+        bronze_object=bronze_object,
+        silver_object=silver_object,
+        gold_object=gold_object,
     )
 
     manifest = {

@@ -25,6 +25,12 @@ That means:
 - prefer local-first OSS components such as Parquet, DuckDB, FastAPI, Polars, and scikit-learn;
 - keep optional integrations optional and document the local fallback path.
 
+When adding cloud-like architecture patterns:
+
+- provide a zero-cost local equivalent first;
+- prefer checked-in infrastructure as code and scripts over manual setup steps;
+- make sure local validation remains possible without vendor credentials.
+
 ## Documentation policy
 
 Documentation changes are required whenever shipped behavior changes.
@@ -36,6 +42,7 @@ Please update the relevant Markdown files when you change:
 - audit or replay behavior;
 - dashboard behavior;
 - dataset adapters or governance workflows;
+- storage backends, orchestration, or lakehouse behavior;
 - setup instructions;
 - model or artifact expectations that users rely on.
 

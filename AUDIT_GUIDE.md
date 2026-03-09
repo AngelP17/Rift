@@ -109,6 +109,8 @@ The ETL warehouse stores:
 - silver_transactions
 - gold_features
 
+The local lakehouse layer also provides SQL views over current transaction and feature snapshots so teams can inspect operational state without exporting data into a paid warehouse.
+
 Each stored prediction includes the payload, derived features, model run ID, calibrated probability, decision label, explanation, and report output.
 
 ## Example report

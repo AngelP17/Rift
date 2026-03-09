@@ -51,6 +51,12 @@ Install the project in editable mode:
 python3 -m pip install -e ".[dev]"
 ```
 
+Install the optional local “managed-cloud-like” stack for MinIO, MLflow, and Spark-compatible local compute:
+
+```bash
+python3 -m pip install -e ".[dev,local-stack]"
+```
+
 Generate demo data, train a model, and score a sample transaction:
 
 ```bash
@@ -87,6 +93,16 @@ Launch the built-in dashboard:
 rift dashboard --host 127.0.0.1 --port 8000
 ```
 
+Run the local orchestration and lakehouse workflow:
+
+```bash
+rift pipeline run --txns 1000 --users 100 --merchants 40 --fraud-rate 0.05
+rift lakehouse build
+rift lakehouse query --sql "select count(*) as transaction_count from transactions"
+rift storage status
+rift spark summary --data-path .rift/data/transactions.parquet
+```
+
 ## Current implemented surface
 
 The current MVP ships these CLI commands:
@@ -99,6 +115,11 @@ The current MVP ships these CLI commands:
 - `rift fairness status`
 - `rift federated train`
 - `rift federated status`
+- `rift storage status`
+- `rift storage sync`
+- `rift lakehouse build`
+- `rift lakehouse query --sql <query>`
+- `rift spark summary`
 - `rift generate`
 - `rift train`
 - `rift predict --tx <path>`
@@ -106,6 +127,7 @@ The current MVP ships these CLI commands:
 - `rift audit <decision_id> --format {markdown,json}`
 - `rift compare`
 - `rift export --format {markdown,json}`
+- `rift pipeline run`
 - `rift dashboard`
 
 Supported training modes today:
@@ -134,6 +156,10 @@ Artifacts are written under `.rift/` by default:
 - `.rift/governance/governance.duckdb`
 - `.rift/federated/fed_*/artifact.pkl`
 - `.rift/federated/fed_*/metrics.json`
+- `.rift/storage/**/*`
+- `.rift/lakehouse/rift_lakehouse.duckdb`
+- `.rift/lakehouse/latest_pipeline_run.json`
+- `.rift/mlruns/**/*`
 - `.rift/runs/<run_id>/artifact.pkl`
 - `.rift/runs/<run_id>/metrics.json`
 - `.rift/audit/rift.duckdb`
@@ -153,6 +179,57 @@ That means the default path uses:
 Rift does **not** require BigQuery, DataProc, PubSub, proprietary dashboards, closed-source model hosting, or any paid cloud service to run its core workflows.
 
 If optional integrations are added later, they should remain optional and must not replace the local OSS-first path.
+
+## Local BigQuery/DataProc-style stack
+
+Rift now includes a zero-cost local stack that mirrors the shape of a cloud-native analytics platform without introducing vendor lock-in.
+
+The local equivalents are:
+
+- BigQuery-style SQL analytics -> DuckDB over Parquet
+- DataProc-style distributed processing -> local PySpark in `local[*]` mode
+- GCS-style object storage -> local filesystem by default, optional MinIO-compatible S3 storage
+- Airflow orchestration -> checked-in local DAGs plus Docker Compose services
+- managed experiment tracking -> local MLflow file-backed tracking
+
+```mermaid
+flowchart LR
+    A[Raw Transactions] --> B[Parquet Lake]
+    B --> C[DuckDB Lakehouse Views]
+    B --> D[Local Spark Jobs]
+    C --> E[Audit and Governance Queries]
+    D --> F[Training and Batch Pipelines]
+    F --> G[MLflow Local Tracking]
+    E --> H[FastAPI Dashboard]
+    F --> H
+    I[Optional MinIO] --> B
+    J[Airflow DAGs] --> F
+    J --> E
+```
+
+This stack is designed to feel like a modern managed analytics platform while staying 100% open-source and zero-cost for local development, demos, and self-hosted deployment.
+
+## Storage and lakehouse
+
+Rift now exposes a storage abstraction and SQL-first lakehouse workflow.
+
+Storage options:
+
+- `local` backend by default
+- `minio` backend optionally through S3-compatible object storage
+
+Lakehouse capabilities:
+
+- auto-built DuckDB views over current Parquet snapshots
+- SQL queries over transactions, features, and ETL outputs
+- end-to-end pipeline materialization for operational validation
+
+Checked-in local stack files:
+
+- `docker-compose.yml`
+- `dags/rift_pipeline.py`
+- `scripts/init_local_stack.sh`
+- `scripts/validate_local_stack.sh`
 
 ## Government-ready ETL
 
@@ -232,6 +309,7 @@ The dashboard surfaces:
 - prepared public datasets;
 - fairness audit summaries;
 - federated run summaries;
+- storage backend status;
 - recent audit decisions;
 - current model metrics.
 
@@ -242,6 +320,11 @@ Rift ships with:
 - a synthetic fintech transaction simulator;
 - public dataset preparation adapters;
 - an auditable bronze/silver/gold ETL pipeline;
+- a local storage abstraction with optional MinIO compatibility;
+- a DuckDB lakehouse with SQL-first analytics;
+- optional Spark-compatible local compute;
+- local MLflow experiment logging;
+- checked-in Airflow orchestration scaffolding;
 - a Polars feature pipeline;
 - a heterogeneous-to-transaction graph builder;
 - a GraphSAGE-style relational encoder;
@@ -262,9 +345,10 @@ Rift ships with:
 5. Train a tabular, hybrid, or federated baseline model.
 6. Calibrate the model and fit a conformal triage layer.
 7. Run fairness audits over sensitive groups when required.
-8. Score new transactions and record each decision for replay.
-9. Review ETL lineage, governance outputs, and audit history in the dashboard.
-10. Render plain-English audit reports for non-technical stakeholders.
+8. Materialize lakehouse views and optionally sync artifacts to local or MinIO-compatible object storage.
+9. Score new transactions and record each decision for replay.
+10. Review ETL lineage, governance outputs, storage status, and audit history in the dashboard.
+11. Render plain-English audit reports for non-technical stakeholders.
 
 ## Experiments
 
@@ -301,6 +385,9 @@ The FastAPI app exposes:
 - `GET /etl/status`
 - `GET /fairness/status`
 - `GET /federated/status`
+- `GET /storage/status`
+- `GET /lakehouse/status`
+- `GET /lakehouse/query`
 - `GET /dashboard`
 - `GET /dashboard/summary`
 - `GET /metrics/latest`
@@ -326,6 +413,7 @@ Current MVP:
 
 - public dataset adapters;
 - auditable ETL ingestion and feature loading;
+- local BigQuery/DataProc-style storage and lakehouse workflow;
 - synthetic data generation;
 - feature engineering;
 - graph-aware hybrid training;
@@ -340,7 +428,8 @@ Next iterations:
 - stronger temporal graph models;
 - richer counterfactuals;
 - PDF report export;
-- experiment notebooks and additional public dataset benchmarks.
+- experiment notebooks and additional public dataset benchmarks;
+- optional container smoke tests in CI when Docker is available.
 
 ## Contributing
 
