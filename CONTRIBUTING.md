@@ -31,6 +31,12 @@ When adding cloud-like architecture patterns:
 - prefer checked-in infrastructure as code and scripts over manual setup steps;
 - make sure local validation remains possible without vendor credentials.
 
+When adding governance features:
+
+- prefer generated artifacts over handwritten status notes where possible;
+- keep model cards, drift reports, and fairness outputs reproducible from local artifacts;
+- ensure governance templates remain usable without hosted model registries.
+
 ## Documentation policy
 
 Documentation changes are required whenever shipped behavior changes.
@@ -43,6 +49,7 @@ Please update the relevant Markdown files when you change:
 - dashboard behavior;
 - dataset adapters or governance workflows;
 - storage backends, orchestration, or lakehouse behavior;
+- model cards, drift monitoring, sector profiles, or query features;
 - setup instructions;
 - model or artifact expectations that users rely on.
 

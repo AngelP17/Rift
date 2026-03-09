@@ -10,6 +10,7 @@ from typing import Any
 import duckdb
 import polars as pl
 
+from rift.adapters.sectors import DEFAULT_PROFILE, apply_sector_profile, load_sector_profile
 from rift.features.engine import build_features
 from rift.storage.backends import get_storage_backend
 from rift.utils.config import RiftPaths
@@ -272,8 +273,12 @@ def _ensure_table(conn: duckdb.DuckDBPyConnection, table_name: str, parquet_path
         "select count(*) from information_schema.tables where table_name = ?",
         [table_name],
     ).fetchone()[0]
+    parquet_columns = pl.read_parquet(parquet_path).columns
     if exists:
-        return
+        current_columns = [row[1] for row in conn.execute(f"pragma table_info('{table_name}')").fetchall()]
+        if current_columns == parquet_columns:
+            return
+        conn.execute(f"drop table {table_name}")
     conn.execute(
         f"create table {table_name} as select * from read_parquet(?) limit 0",
         [str(parquet_path)],
@@ -324,8 +329,12 @@ def run_etl_pipeline(
     paths: RiftPaths,
     source_system: str = "government_finance",
     dataset_name: str = "transactions",
+    sector: str = DEFAULT_PROFILE,
+    repo_root: Path | None = None,
 ) -> ETLRunSummary:
     raw = _read_source(source)
+    resolved_root = repo_root or Path(__file__).resolve().parents[3]
+    raw = apply_sector_profile(raw, load_sector_profile(resolved_root, sector))
     storage = get_storage_backend(paths)
     run_id = f"etl_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')}"
     bronze_path = paths.bronze_dir / f"{run_id}_{dataset_name}.parquet"

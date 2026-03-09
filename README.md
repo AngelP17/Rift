@@ -57,6 +57,12 @@ Install the optional local “managed-cloud-like” stack for MinIO, MLflow, and
 python3 -m pip install -e ".[dev,local-stack]"
 ```
 
+Install the optional advanced governance stack for drift monitoring:
+
+```bash
+python3 -m pip install -e ".[dev,local-stack,advanced]"
+```
+
 Generate demo data, train a model, and score a sample transaction:
 
 ```bash
@@ -103,6 +109,15 @@ rift storage status
 rift spark summary --data-path .rift/data/transactions.parquet
 ```
 
+Generate governance artifacts and run monitoring:
+
+```bash
+rift governance generate-card
+rift monitor drift --reference-path .rift/data/transactions.parquet --current-path .rift/data/transactions.parquet
+rift query --natural "show recent flagged transactions"
+rift sector list
+```
+
 ## Current implemented surface
 
 The current MVP ships these CLI commands:
@@ -113,8 +128,13 @@ The current MVP ships these CLI commands:
 - `rift etl status`
 - `rift fairness audit --sensitive-column <column>`
 - `rift fairness status`
+- `rift governance generate-card`
+- `rift monitor drift`
+- `rift monitor drift-status`
 - `rift federated train`
 - `rift federated status`
+- `rift sector list`
+- `rift sector show --name <sector>`
 - `rift storage status`
 - `rift storage sync`
 - `rift lakehouse build`
@@ -127,6 +147,8 @@ The current MVP ships these CLI commands:
 - `rift audit <decision_id> --format {markdown,json}`
 - `rift compare`
 - `rift export --format {markdown,json}`
+- `rift query --natural <query>`
+- `rift reengineer simulate --source <path>`
 - `rift pipeline run`
 - `rift dashboard`
 
@@ -141,6 +163,12 @@ Supported public dataset adapters today:
 - `ieee_cis`
 - `credit_card_fraud`
 
+Supported sector profiles today:
+
+- `fintech`
+- `healthcare`
+- `energy`
+
 Artifacts are written under `.rift/` by default:
 
 - `.rift/data/transactions.parquet`
@@ -153,9 +181,13 @@ Artifacts are written under `.rift/` by default:
 - `.rift/etl/lineage/*.json`
 - `.rift/etl/warehouse.duckdb`
 - `.rift/governance/fairness/*.json`
+- `.rift/governance/model_cards/*.md`
+- `.rift/governance/drift/*.json`
 - `.rift/governance/governance.duckdb`
 - `.rift/federated/fed_*/artifact.pkl`
 - `.rift/federated/fed_*/metrics.json`
+- `.rift/queries/*.json`
+- `.rift/reengineered/*.parquet`
 - `.rift/storage/**/*`
 - `.rift/lakehouse/rift_lakehouse.duckdb`
 - `.rift/lakehouse/latest_pipeline_run.json`
@@ -208,6 +240,93 @@ flowchart LR
 ```
 
 This stack is designed to feel like a modern managed analytics platform while staying 100% open-source and zero-cost for local development, demos, and self-hosted deployment.
+
+## Model cards and governance templates
+
+Rift now includes OSS model card generation inspired by public model governance standards.
+
+Each generated model card summarizes:
+
+- model type and run metadata;
+- training configuration and calibration settings;
+- latest fairness audit;
+- latest drift report;
+- optimization metadata such as green-mode artifact reduction;
+- governance caveats and ethical notes.
+
+Model card templates are stored in:
+
+- `docs/templates/model_card.md.j2`
+- `docs/templates/governance_summary.md.j2`
+
+Generated outputs are written under:
+
+- `.rift/governance/model_cards/`
+
+## Drift monitoring and retraining hooks
+
+Rift now ships with a drift monitoring path that compares reference and current datasets using:
+
+- `alibi-detect` when available;
+- a built-in fallback z-score detector when optional drift dependencies are not installed.
+
+The monitor can optionally trigger retraining when drift exceeds a chosen threshold.
+
+```mermaid
+flowchart TD
+    A[Reference Dataset] --> C[Feature Extraction]
+    B[Current Dataset] --> C
+    C --> D[Drift Detector]
+    D --> E{Drift?}
+    E -->|No| F[Store Drift Report]
+    E -->|Yes| G[Trigger Retraining]
+    G --> H[Write New Run Metadata]
+    F --> I[Governance DB]
+    H --> I
+```
+
+## Sector profiles and plugins
+
+Rift now includes config-driven sector profiles stored under `configs/sectors/`.
+
+These profiles support:
+
+- field alias normalization;
+- privacy masking for sector-specific sensitive fields;
+- sector defaults such as channel, category, and source system tags.
+
+Current examples:
+
+- healthcare claims
+- energy billing
+- fintech transactions
+
+## Green optimization
+
+Training and federated runs now support `--optimize green`.
+
+The current green path is designed to remain lightweight and open-source:
+
+- downcasts custom numeric model weights where safe;
+- records estimated artifact size before and after optimization;
+- logs the optimization metadata to run artifacts and model cards.
+
+## Local natural-language audit queries
+
+Rift now supports natural-language queries over audit and governance outputs.
+
+By default it uses a deterministic heuristic translator to SQL so the feature works offline at zero cost.
+
+If a local Ollama instance is available, Rift can also use it to summarize the query results for non-technical reviewers.
+
+## Collaboration and CI
+
+Rift now includes:
+
+- local JupyterHub scaffolding in `docker/jupyterhub.yml`;
+- a checked-in JupyterHub config under `hub-config/`;
+- GitHub Actions validation gates under `.github/workflows/validate.yml`;
+- CI helper scripts for fairness, drift, model cards, and query validation.
 
 ## Storage and lakehouse
 
@@ -308,6 +427,7 @@ The dashboard surfaces:
 - ETL lineage status;
 - prepared public datasets;
 - fairness audit summaries;
+- drift monitoring summaries;
 - federated run summaries;
 - storage backend status;
 - recent audit decisions;
@@ -319,12 +439,17 @@ Rift ships with:
 
 - a synthetic fintech transaction simulator;
 - public dataset preparation adapters;
+- config-driven sector profiles;
 - an auditable bronze/silver/gold ETL pipeline;
 - a local storage abstraction with optional MinIO compatibility;
 - a DuckDB lakehouse with SQL-first analytics;
 - optional Spark-compatible local compute;
 - local MLflow experiment logging;
 - checked-in Airflow orchestration scaffolding;
+- OSS model card and governance templates;
+- drift monitoring with retrain hooks;
+- local natural-language query support over governance and audit data;
+- JupyterHub and CI validation scaffolding;
 - a Polars feature pipeline;
 - a heterogeneous-to-transaction graph builder;
 - a GraphSAGE-style relational encoder;
@@ -343,12 +468,15 @@ Rift ships with:
 3. Build temporal and behavioral features.
 4. Construct a relational graph between transactions and shared entities.
 5. Train a tabular, hybrid, or federated baseline model.
-6. Calibrate the model and fit a conformal triage layer.
-7. Run fairness audits over sensitive groups when required.
-8. Materialize lakehouse views and optionally sync artifacts to local or MinIO-compatible object storage.
-9. Score new transactions and record each decision for replay.
-10. Review ETL lineage, governance outputs, storage status, and audit history in the dashboard.
-11. Render plain-English audit reports for non-technical stakeholders.
+6. Optionally apply green optimization metadata during training.
+7. Calibrate the model and fit a conformal triage layer.
+8. Run fairness audits over sensitive groups when required.
+9. Run drift monitoring against new data and trigger retraining if needed.
+10. Materialize lakehouse views and optionally sync artifacts to local or MinIO-compatible object storage.
+11. Score new transactions and record each decision for replay.
+12. Generate model cards and governance summaries for handoff and compliance review.
+13. Review ETL lineage, governance outputs, storage status, and audit history in the dashboard.
+14. Render plain-English audit reports for non-technical stakeholders.
 
 ## Experiments
 
@@ -385,6 +513,9 @@ The FastAPI app exposes:
 - `GET /etl/status`
 - `GET /fairness/status`
 - `GET /federated/status`
+- `GET /monitor/drift-status`
+- `GET /query`
+- `POST /governance/model-card/{run_id}`
 - `GET /storage/status`
 - `GET /lakehouse/status`
 - `GET /lakehouse/query`
@@ -414,9 +545,13 @@ Current MVP:
 - public dataset adapters;
 - auditable ETL ingestion and feature loading;
 - local BigQuery/DataProc-style storage and lakehouse workflow;
+- sector profiles and privacy masking;
 - synthetic data generation;
 - feature engineering;
 - graph-aware hybrid training;
+- model cards and governance templates;
+- drift monitoring with optional retraining;
+- natural-language governance and audit queries;
 - fairness audit reporting;
 - local federated training scaffolding;
 - enterprise-style operations dashboard;
@@ -429,6 +564,7 @@ Next iterations:
 - richer counterfactuals;
 - PDF report export;
 - experiment notebooks and additional public dataset benchmarks;
+- richer Ollama-backed summarization and retrieval when a local model is available;
 - optional container smoke tests in CI when Docker is available.
 
 ## Contributing

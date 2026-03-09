@@ -92,6 +92,22 @@ These reports summarize:
 
 The reports are written locally under `.rift/governance/fairness/` and summarized in the built-in dashboard.
 
+## Model cards and drift reports
+
+Rift can generate model cards for trained runs and drift reports for monitoring comparisons.
+
+These artifacts are intended for:
+
+- compliance handoff;
+- model review meetings;
+- audit prep;
+- non-technical governance summaries.
+
+They are written locally under:
+
+- `.rift/governance/model_cards/`
+- `.rift/governance/drift/`
+
 ## What is currently stored
 
 The MVP stores decision records in DuckDB tables for:
@@ -130,6 +146,8 @@ You can also fetch these through the API:
 - `GET /replay/{decision_id}`
 - `GET /audit/{decision_id}`
 - `GET /fairness/status`
+- `GET /monitor/drift-status`
+- `GET /query`
 - `GET /dashboard`
 
 Example wording:

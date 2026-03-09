@@ -15,11 +15,13 @@ authors = [
 dependencies = [
   "duckdb",
   "fastapi",
+  "jinja2",
   "networkx",
   "numpy",
   "polars",
   "pydantic",
   "pyarrow",
+  "pyyaml",
   "scikit-learn",
   "typer",
   "uvicorn",
@@ -36,6 +38,9 @@ local-stack = [
   "minio",
   "mlflow",
   "pyspark",
+]
+advanced = [
+  "alibi-detect",
 ]
 
 [project.scripts]

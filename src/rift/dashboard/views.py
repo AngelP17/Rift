@@ -11,6 +11,7 @@ from rift.datasets.adapters import list_prepared_datasets
 from rift.etl.pipeline import list_etl_runs
 from rift.federated.simulation import list_federated_runs
 from rift.governance.fairness import list_fairness_audits
+from rift.monitoring.drift import list_drift_reports
 from rift.storage.backends import get_storage_backend
 from rift.utils.config import RiftPaths
 from rift.utils.io import read_json
@@ -66,6 +67,7 @@ def dashboard_snapshot(paths: RiftPaths) -> dict[str, Any]:
         current_metrics = _safe_read_json(paths.runs_dir / current_run["run_id"] / "metrics.json")
     etl_runs = list_etl_runs(paths.warehouse_db, limit=10)
     fairness_runs = list_fairness_audits(paths, limit=10)
+    drift_reports = list_drift_reports(paths, limit=10)
     federated_runs = list_federated_runs(paths, limit=10)
     prepared_datasets = list_prepared_datasets(paths, limit=10)
     recent_audits = _recent_audits(paths, limit=10)
@@ -75,6 +77,7 @@ def dashboard_snapshot(paths: RiftPaths) -> dict[str, Any]:
         "current_metrics": current_metrics,
         "etl_runs": etl_runs,
         "fairness_audits": fairness_runs,
+        "drift_reports": drift_reports,
         "federated_runs": federated_runs,
         "prepared_datasets": prepared_datasets,
         "recent_audits": recent_audits,
@@ -82,6 +85,7 @@ def dashboard_snapshot(paths: RiftPaths) -> dict[str, Any]:
         "kpis": {
             "etl_runs": len(etl_runs),
             "fairness_audits": len(fairness_runs),
+            "drift_reports": len(drift_reports),
             "federated_runs": len(federated_runs),
             "recent_audits": len(recent_audits),
         },
@@ -92,6 +96,7 @@ def _render_cards(kpis: dict[str, Any], current_metrics: dict[str, Any] | None) 
     cards = [
         ("ETL Runs", str(kpis["etl_runs"])),
         ("Fairness Audits", str(kpis["fairness_audits"])),
+        ("Drift Reports", str(kpis["drift_reports"])),
         ("Federated Runs", str(kpis["federated_runs"])),
         ("Recorded Audits", str(kpis["recent_audits"])),
     ]
@@ -236,6 +241,9 @@ def build_dashboard_html(paths: RiftPaths) -> str:
       </div>
       <div class="two-up">
         {_render_table("Recent Fairness Audits", ["audit_id", "sensitive_column", "demographic_parity_difference", "disparate_impact_ratio"], snapshot["fairness_audits"])}
+      </div>
+      <div class="two-up">
+        {_render_table("Recent Drift Reports", ["report_id", "drift_score", "is_drift", "retrain_triggered"], snapshot["drift_reports"])}
       </div>
       <div class="two-up">
         {_render_table("Federated Training Runs", ["run_id", "client_column", "client_count", "rounds"], snapshot["federated_runs"])}

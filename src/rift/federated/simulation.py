@@ -14,6 +14,7 @@ from rift.mlops.mlflow_tracker import log_run_metrics
 from rift.models.calibrate import ProbabilityCalibrator
 from rift.models.conformal import ConformalClassifier
 from rift.models.metrics import brier, expected_calibration_error, pr_auc, recall_at_fpr
+from rift.optimize.green import apply_green_optimization
 from rift.utils.config import RiftPaths
 from rift.utils.io import read_json, write_json, write_pickle
 
@@ -94,6 +95,7 @@ def train_federated_model(
     local_epochs: int = 3,
     learning_rate: float = 0.1,
     time_split: bool = False,
+    optimize_mode: str = "standard",
 ) -> FederatedRunSummary:
     feat = build_features(frame)
     categorical_mappings = extract_categorical_mappings(feat)
@@ -182,6 +184,7 @@ def train_federated_model(
         "conformal": conformal,
         "client_stats": client_stats,
     }
+    artifact, optimization = apply_green_optimization(artifact, optimize_mode)
     write_pickle(artifact_path, artifact)
     write_json(
         metadata_path,
@@ -193,6 +196,7 @@ def train_federated_model(
             "client_count": len(unique_clients),
             "metrics": metrics,
             "artifact_path": str(artifact_path),
+            "optimization": optimization,
         },
     )
     mlflow_run_id = log_run_metrics(
@@ -205,6 +209,7 @@ def train_federated_model(
             "local_epochs": local_epochs,
             "learning_rate": learning_rate,
             "time_split": time_split,
+            "optimize_mode": optimize_mode,
         },
         metrics=metrics,
         tags={"component": "federated"},
@@ -220,6 +225,7 @@ def train_federated_model(
                 "client_count": len(unique_clients),
                 "metrics": metrics,
                 "artifact_path": str(artifact_path),
+                "optimization": optimization,
                 "mlflow_run_id": mlflow_run_id,
             },
         )

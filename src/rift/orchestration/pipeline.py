@@ -34,10 +34,17 @@ def run_end_to_end_pipeline(
     fraud_rate: float,
     model_type: str,
     sample_tx_path: Path,
+    optimize_mode: str = "standard",
 ) -> PipelineRunSummary:
     frame = generate_transactions(txns=txns, users=users, merchants=merchants, fraud_rate=fraud_rate, seed=7)
     frame.write_parquet(paths.data_path)
-    train_summary = train_from_frame(frame, runs_dir=paths.runs_dir, model_type=model_type, time_split=True)
+    train_summary = train_from_frame(
+        frame,
+        runs_dir=paths.runs_dir,
+        model_type=model_type,
+        time_split=True,
+        optimize_mode=optimize_mode,
+    )
 
     artifact = load_run(paths.runs_dir, train_summary.run_id)
     payload = read_json(sample_tx_path)

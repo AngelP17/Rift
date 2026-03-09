@@ -18,6 +18,7 @@ from rift.models.ensemble import GraphHybridModel
 from rift.models.graphsage import GraphSAGEEncoder, GraphSAGEOnlyModel
 from rift.models.metrics import brier, expected_calibration_error, pr_auc, recall_at_fpr
 from rift.mlops.mlflow_tracker import log_run_metrics
+from rift.optimize.green import apply_green_optimization
 from rift.utils.io import write_json, write_pickle
 
 
@@ -48,6 +49,8 @@ def train_from_frame(
     model_type: str = "graphsage_xgb",
     time_split: bool = False,
     calibration_method: str = "isotonic",
+    sector_profile: str = "fintech",
+    optimize_mode: str = "standard",
 ) -> ModelRunSummary:
     feat = build_features(frame)
     categorical_mappings = extract_categorical_mappings(feat)
@@ -68,6 +71,7 @@ def train_from_frame(
         "model_type": model_type,
         "feature_columns": columns,
         "trained_at": datetime.now(timezone.utc).isoformat(),
+        "sector_profile": sector_profile,
     }
 
     if model_type == "xgb_tabular":
@@ -119,6 +123,7 @@ def train_from_frame(
     run_dir = runs_dir / run_id
     artifact_path = run_dir / "artifact.pkl"
     metadata_path = run_dir / "metrics.json"
+    artifact, optimization = apply_green_optimization(artifact, optimize_mode)
     write_pickle(artifact_path, artifact)
     write_json(
         metadata_path,
@@ -129,6 +134,8 @@ def train_from_frame(
             "feature_columns": columns,
             "time_split": time_split,
             "calibration_method": calibration_method,
+            "sector_profile": sector_profile,
+            "optimization": optimization,
         },
     )
     mlflow_run_id = log_run_metrics(
@@ -139,6 +146,8 @@ def train_from_frame(
             "model_type": model_type,
             "time_split": time_split,
             "calibration_method": calibration_method,
+            "sector_profile": sector_profile,
+            "optimize_mode": optimize_mode,
         },
         metrics=metrics,
         tags={"component": "training"},
@@ -151,6 +160,8 @@ def train_from_frame(
             "feature_columns": columns,
             "time_split": time_split,
             "calibration_method": calibration_method,
+                "sector_profile": sector_profile,
+                "optimization": optimization,
             "mlflow_run_id": mlflow_run_id,
         }
         write_json(metadata_path, metadata)

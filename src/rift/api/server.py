@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
@@ -12,6 +13,9 @@ from rift.datasets.adapters import list_prepared_datasets
 from rift.etl.pipeline import list_etl_runs
 from rift.federated.simulation import list_federated_runs
 from rift.governance.fairness import list_fairness_audits
+from rift.governance.model_cards import generate_model_card
+from rift.monitoring.drift import list_drift_reports
+from rift.monitoring.nl_query import answer_natural_language_query
 from rift.explain.report import build_audit_report, build_explanation, report_to_markdown
 from rift.models.infer import load_run, payload_to_frame, score_frame
 from rift.replay.hashing import decision_hash
@@ -110,6 +114,16 @@ def federated_status(limit: int = 10) -> list[dict]:
     return list_federated_runs(get_paths(), limit=limit)
 
 
+@app.get("/monitor/drift-status")
+def drift_status(limit: int = 10) -> list[dict]:
+    return list_drift_reports(get_paths(), limit=limit)
+
+
+@app.get("/query")
+def natural_query(natural: str) -> dict:
+    return answer_natural_language_query(get_paths(), natural).to_dict()
+
+
 @app.get("/dashboard/summary")
 def dashboard_summary() -> dict:
     return dashboard_snapshot(get_paths())
@@ -118,6 +132,11 @@ def dashboard_summary() -> dict:
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard() -> HTMLResponse:
     return HTMLResponse(build_dashboard_html(get_paths()))
+
+
+@app.post("/governance/model-card/{run_id}")
+def model_card(run_id: str) -> dict:
+    return generate_model_card(get_paths(), run_id, repo_root=Path("/workspace")).to_dict()
 
 
 @app.get("/storage/status")
