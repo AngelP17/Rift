@@ -137,5 +137,10 @@ def feature_columns(frame: pl.DataFrame) -> list[str]:
         "channel",
         "mcc",
         "is_fraud",
+        "sector",
+        "etl_run_id",
+        "source_system",
+        "ingested_at",
+        "record_hash",
     }
     return [column for column in frame.columns if column not in excluded]

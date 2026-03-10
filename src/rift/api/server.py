@@ -4,19 +4,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, PlainTextResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 
-from rift.dashboard.views import (
-    build_audits_detail,
-    build_dashboard_html,
-    build_etl_detail,
-    build_governance_detail,
-    build_models_detail,
-    dashboard_snapshot,
-    get_static_dir,
-)
+from rift.lakehouse.sql import build_default_views, query_lakehouse
 from rift.data.schemas import PredictionRequest
+from rift.dashboard.views import build_dashboard_html, build_landing_html, dashboard_snapshot
 from rift.datasets.adapters import list_prepared_datasets
 from rift.etl.pipeline import list_etl_runs
 from rift.explain.report import build_audit_report, build_explanation, report_to_markdown
@@ -49,6 +42,42 @@ def health() -> dict:
         "version": "1.0.0",
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/favicon.ico")
+def favicon() -> Response:
+    return Response(
+        content=(
+            "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
+            "<rect width='64' height='64' rx='18' fill='#030712'/>"
+            "<path d='M18 46V18h15.8c9 0 14.2 4.4 14.2 11.3 0 6.9-5.2 11.5-14.2 11.5H25.4V46H18Zm7.4-11.2h8.1c4.8 0 7.2-1.9 7.2-5.5 0-3.6-2.4-5.3-7.2-5.3h-8.1v10.8Z' fill='#6ea8fe'/>"
+            "</svg>"
+        ),
+        media_type="image/svg+xml",
+    )
+
+
+@app.get("/.well-known/appspecific/com.chrome.devtools.json")
+def chrome_devtools_probe() -> dict:
+    # Chrome probes this path in some environments; returning an empty payload
+    # avoids a noisy but otherwise harmless 404 in the console.
+    return {}
+
+
+@app.get("/", response_class=HTMLResponse)
+def landing() -> HTMLResponse:
+    return HTMLResponse(build_landing_html(get_paths()))
 
 
 @app.post("/predict")
@@ -158,76 +187,48 @@ def dashboard_index() -> HTMLResponse:
     return HTMLResponse(build_dashboard_html(get_paths()))
 
 
-@app.get("/dashboard/etl", response_class=HTMLResponse)
-def dashboard_etl() -> HTMLResponse:
-    return HTMLResponse(build_etl_detail(get_paths()))
-
-
-@app.get("/dashboard/governance", response_class=HTMLResponse)
-def dashboard_governance() -> HTMLResponse:
-    return HTMLResponse(build_governance_detail(get_paths()))
-
-
-@app.get("/dashboard/audits", response_class=HTMLResponse)
-def dashboard_audits() -> HTMLResponse:
-    return HTMLResponse(build_audits_detail(get_paths()))
-
-
-@app.get("/dashboard/models", response_class=HTMLResponse)
-def dashboard_models() -> HTMLResponse:
-    return HTMLResponse(build_models_detail(get_paths()))
-
-
-# ── Export / download routes ──────────────────────────────────────
-
-@app.get("/exports/model-card/{run_id}")
-def export_model_card(run_id: str, format: str = "md") -> PlainTextResponse:
+@app.get("/dashboard/export/model-card")
+def export_model_card() -> PlainTextResponse:
+    """Download the latest model card as a markdown file."""
     paths = get_paths()
-    try:
-        result = generate_model_card(paths, run_id, repo_root=_REPO_ROOT)
-    except Exception as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-    card_path = Path(result.model_card_path)
-    if not card_path.exists():
-        raise HTTPException(status_code=404, detail="Model card file not found")
-
-    content = card_path.read_text(encoding="utf-8")
+    cards_dir = paths.governance_dir / "model_cards"
+    if not cards_dir.exists():
+        raise HTTPException(status_code=404, detail="No model cards generated yet")
+    cards = sorted(cards_dir.glob("*.md"), reverse=True)
+    if not cards:
+        raise HTTPException(status_code=404, detail="No model cards generated yet")
+    content = cards[0].read_text()
     return PlainTextResponse(
         content,
         media_type="text/markdown",
-        headers={"Content-Disposition": f"attachment; filename=model_card_{run_id}.md"},
+        headers={"Content-Disposition": f'attachment; filename="{cards[0].name}"'},
     )
 
 
-@app.get("/exports/audit/{decision_id}")
-def export_audit(decision_id: str, format: str = "md") -> PlainTextResponse:
+@app.get("/dashboard/export/audit")
+def export_audit_report() -> PlainTextResponse:
+    """Download the latest audit report as a markdown file."""
     paths = get_paths()
-    try:
-        result = replay_decision(paths.audit_db, decision_id)
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-    if format == "json":
-        import json
-        content = json.dumps(result["report"], indent=2, default=str)
-        return PlainTextResponse(
-            content,
-            media_type="application/json",
-            headers={"Content-Disposition": f"attachment; filename=audit_{decision_id}.json"},
-        )
-
-    markdown = result.get("markdown", "")
-    if not markdown:
-        markdown = str(result.get("report", {}))
+    import duckdb
+    if not paths.audit_db.exists():
+        raise HTTPException(status_code=404, detail="No audit reports recorded yet")
+    conn = duckdb.connect(str(paths.audit_db), read_only=True)
+    exists = conn.execute(
+        "select count(*) from information_schema.tables where table_name = 'audit_reports'"
+    ).fetchone()[0]
+    if not exists:
+        conn.close()
+        raise HTTPException(status_code=404, detail="No audit reports recorded yet")
+    row = conn.execute("select markdown from audit_reports order by decision_id desc limit 1").fetchone()
+    conn.close()
+    if row is None or row[0] is None:
+        raise HTTPException(status_code=404, detail="No audit reports with markdown found")
     return PlainTextResponse(
-        markdown,
+        row[0],
         media_type="text/markdown",
-        headers={"Content-Disposition": f"attachment; filename=audit_{decision_id}.md"},
+        headers={"Content-Disposition": 'attachment; filename="audit_report.md"'},
     )
 
-
-# ── Governance routes ─────────────────────────────────────────────
 
 @app.post("/governance/model-card/{run_id}")
 def model_card(run_id: str) -> dict:

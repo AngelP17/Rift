@@ -22,6 +22,7 @@ dependencies = [
   "pydantic",
   "pyarrow",
   "pyyaml",
+  "rich",
   "scikit-learn",
   "typer",
   "uvicorn",

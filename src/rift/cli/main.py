@@ -8,6 +8,7 @@ import polars as pl
 import typer
 
 from rift.adapters.sectors import DEFAULT_PROFILE, available_sector_profiles, load_sector_profile
+from rift.cli.ui import emit_json, emit_markdown, emit_panel, emit_records, emit_summary, emit_syntax, run_staged_progress
 from rift.compute.spark_compat import spark_available, summarise_parquet_with_spark
 from rift.data.generator import generate_transactions
 from rift.datasets.adapters import list_prepared_datasets, prepare_public_dataset
@@ -78,9 +79,34 @@ def generate(
     seed: int = typer.Option(7),
 ) -> None:
     paths = get_paths()
-    frame = generate_transactions(txns=txns, users=users, merchants=merchants, fraud_rate=fraud_rate, seed=seed)
-    frame.write_parquet(paths.data_path)
-    typer.echo(f"wrote {frame.height} transactions to {paths.data_path}")
+    state: dict[str, pl.DataFrame] = {}
+
+    def build_frame() -> pl.DataFrame:
+        frame = generate_transactions(txns=txns, users=users, merchants=merchants, fraud_rate=fraud_rate, seed=seed)
+        state["frame"] = frame
+        return frame
+
+    def persist_frame() -> Path:
+        state["frame"].write_parquet(paths.data_path)
+        return paths.data_path
+
+    run_staged_progress(
+        "Generating synthetic fraud data",
+        [
+            ("Sampling entities and injected fraud patterns", build_frame),
+            ("Writing parquet output", persist_frame),
+        ],
+    )
+    emit_summary(
+        "Synthetic Dataset Ready",
+        [
+            ("Transactions", state["frame"].height),
+            ("Users", users),
+            ("Merchants", merchants),
+            ("Fraud rate", fraud_rate),
+            ("Path", paths.data_path),
+        ],
+    )
 
 
 @app.command()
@@ -93,16 +119,45 @@ def train(
 ) -> None:
     paths = get_paths()
     source = data_path or paths.data_path
-    frame = pl.read_parquet(source)
-    summary = train_from_frame(
-        frame,
-        runs_dir=paths.runs_dir,
-        model_type=model,
-        time_split=time_split,
-        sector_profile=sector,
-        optimize_mode=optimize,
+    state: dict[str, object] = {}
+
+    def load_frame() -> pl.DataFrame:
+        frame = pl.read_parquet(source)
+        state["frame"] = frame
+        return frame
+
+    def run_training() -> object:
+        summary = train_from_frame(
+            state["frame"],  # type: ignore[arg-type]
+            runs_dir=paths.runs_dir,
+            model_type=model,
+            time_split=time_split,
+            sector_profile=sector,
+            optimize_mode=optimize,
+        )
+        state["summary"] = summary
+        return summary
+
+    run_staged_progress(
+        "Training fraud model",
+        [
+            ("Loading training frame", load_frame),
+            ("Running hybrid model pipeline", run_training),
+        ],
     )
-    typer.echo(json.dumps({"run_id": summary.run_id, "metrics": summary.metrics}, indent=2))
+    summary = state["summary"]
+    emit_summary(
+        "Training Complete",
+        [
+            ("Run ID", summary.run_id),  # type: ignore[union-attr]
+            ("Model", model),
+            ("Sector", sector),
+            ("Temporal split", time_split),
+            ("PR-AUC", f"{summary.metrics.get('pr_auc', 0.0):.4f}"),  # type: ignore[union-attr]
+            ("ECE", f"{summary.metrics.get('ece', 0.0):.4f}"),  # type: ignore[union-attr]
+        ],
+    )
+    emit_syntax({"run_id": summary.run_id, "metrics": summary.metrics})  # type: ignore[union-attr]
 
 
 @app.command()
@@ -133,22 +188,29 @@ def predict(tx: Path = typer.Option(..., "--tx", exists=True, readable=True)) ->
         markdown=markdown,
         model_run_id=artifact["_run_id"],
     )
-    typer.echo(
-        json.dumps(
-            {
-                "decision_id": decision_id,
-                "model_run_id": artifact["_run_id"],
-                **prediction,
-            },
-            indent=2,
-        )
+    emit_summary(
+        "Prediction Complete",
+        [
+            ("Decision ID", decision_id),
+            ("Run ID", artifact["_run_id"]),
+            ("Decision", prediction.get("decision", "unknown")),
+            ("Probability", f"{prediction.get('calibrated_probability', 0.0):.4f}"),
+            ("Confidence", f"{prediction.get('confidence', 0.0):.4f}"),
+        ],
+    )
+    emit_syntax(
+        {
+            "decision_id": decision_id,
+            "model_run_id": artifact["_run_id"],
+            **prediction,
+        }
     )
 
 
 @app.command()
 def replay(decision_id: str) -> None:
     paths = get_paths()
-    typer.echo(json.dumps(replay_decision(paths.audit_db, decision_id), indent=2))
+    emit_json(replay_decision(paths.audit_db, decision_id))
 
 
 @app.command()
@@ -156,9 +218,9 @@ def audit(decision_id: str, format: str = typer.Option("markdown")) -> None:
     paths = get_paths()
     result = replay_decision(paths.audit_db, decision_id)
     if format == "json":
-        typer.echo(json.dumps(result["report"], indent=2))
+        emit_json(result["report"])
         return
-    typer.echo(result["markdown"])
+    emit_markdown(result["markdown"])
 
 
 @app.command()
@@ -167,7 +229,7 @@ def compare() -> None:
     metrics = []
     for metric_file in sorted(paths.runs_dir.glob("run_*/metrics.json")):
         metrics.append(read_json(metric_file))
-    typer.echo(json.dumps(metrics, indent=2))
+    emit_syntax(metrics)
 
 
 @app.command()
@@ -186,9 +248,9 @@ def export(since: int = typer.Option(90), format: str = typer.Option("markdown")
     ).fetchall()
     conn.close()
     if format == "json":
-        typer.echo(json.dumps([json.loads(row[2]) for row in rows], indent=2))
+        emit_json([json.loads(row[2]) for row in rows])
         return
-    typer.echo("\n\n---\n\n".join(row[1] for row in rows))
+    emit_markdown("\n\n---\n\n".join(row[1] for row in rows))
 
 
 @etl_app.command("run")
@@ -199,21 +261,43 @@ def etl_run(
     sector: str = typer.Option(DEFAULT_PROFILE, "--sector"),
 ) -> None:
     paths = get_paths()
-    summary = run_etl_pipeline(
-        source=source,
-        paths=paths,
-        source_system=source_system,
-        dataset_name=dataset_name,
-        sector=sector,
-        repo_root=Path.cwd(),
+    summary = run_staged_progress(
+        "Running ETL pipeline",
+        [
+            (
+                "Validating source and generating warehouse artifacts",
+                lambda: run_etl_pipeline(
+                    source=source,
+                    paths=paths,
+                    source_system=source_system,
+                    dataset_name=dataset_name,
+                    sector=sector,
+                    repo_root=Path.cwd(),
+                ),
+            ),
+        ],
     )
-    typer.echo(json.dumps(summary.to_dict(), indent=2))
+    emit_summary(
+        "ETL Run Complete",
+        [
+            ("Run ID", summary.run_id),
+            ("Source system", summary.source_system),
+            ("Rows valid", summary.rows_valid),
+            ("Rows invalid", summary.rows_invalid),
+            ("Duplicates removed", summary.duplicates_removed),
+        ],
+    )
+    emit_syntax(summary.to_dict())
 
 
 @etl_app.command("status")
 def etl_status(limit: int = typer.Option(10, min=1, max=100)) -> None:
     paths = get_paths()
-    typer.echo(json.dumps(list_etl_runs(paths.warehouse_db, limit=limit), indent=2, default=str))
+    emit_records(
+        "ETL Status",
+        list_etl_runs(paths.warehouse_db, limit=limit),
+        ["run_id", "source_system", "rows_valid", "rows_invalid", "duplicates_removed"],
+    )
 
 
 @dataset_app.command("prepare")
@@ -224,13 +308,23 @@ def dataset_prepare(
 ) -> None:
     paths = get_paths()
     summary = prepare_public_dataset(source=source, adapter=adapter, paths=paths, auto_etl=auto_etl)
-    typer.echo(json.dumps(summary.to_dict(), indent=2))
+    emit_summary(
+        "Dataset Preparation Complete",
+        [
+            ("Dataset ID", summary.dataset_id),
+            ("Adapter", summary.adapter),
+            ("Rows prepared", summary.rows_prepared),
+            ("Auto ETL", auto_etl),
+        ],
+    )
+    emit_syntax(summary.to_dict())
 
 
 @dataset_app.command("status")
 def dataset_status(limit: int = typer.Option(10, min=1, max=100)) -> None:
     paths = get_paths()
-    typer.echo(json.dumps(list_prepared_datasets(paths, limit=limit), indent=2))
+    rows = [item.get("summary", {}) for item in list_prepared_datasets(paths, limit=limit)]
+    emit_records("Prepared Datasets", rows, ["dataset_id", "adapter", "rows_prepared", "auto_etl_run_id"])
 
 
 @fairness_app.command("audit")
@@ -251,13 +345,26 @@ def fairness_audit(
         threshold=threshold,
         data_path=str(source),
     )
-    typer.echo(json.dumps(summary.to_dict(), indent=2))
+    emit_summary(
+        "Fairness Audit Complete",
+        [
+            ("Audit ID", summary.audit_id),
+            ("Sensitive column", summary.sensitive_column),
+            ("Demographic parity diff", f"{summary.demographic_parity_difference:.4f}"),
+            ("Disparate impact ratio", f"{summary.disparate_impact_ratio:.4f}"),
+        ],
+    )
+    emit_syntax(summary.to_dict())
 
 
 @fairness_app.command("status")
 def fairness_status(limit: int = typer.Option(10, min=1, max=100)) -> None:
     paths = get_paths()
-    typer.echo(json.dumps(list_fairness_audits(paths, limit=limit), indent=2, default=str))
+    emit_records(
+        "Fairness Audits",
+        list_fairness_audits(paths, limit=limit),
+        ["audit_id", "sensitive_column", "demographic_parity_difference", "disparate_impact_ratio"],
+    )
 
 
 @federated_app.command("train")
@@ -283,13 +390,22 @@ def federated_train(
         time_split=time_split,
         optimize_mode=optimize,
     )
-    typer.echo(json.dumps(summary.to_dict(), indent=2))
+    emit_summary(
+        "Federated Training Complete",
+        [
+            ("Run ID", summary.run_id),
+            ("Client column", summary.client_column),
+            ("Client count", summary.client_count),
+            ("Rounds", summary.rounds),
+        ],
+    )
+    emit_syntax(summary.to_dict())
 
 
 @federated_app.command("status")
 def federated_status(limit: int = typer.Option(10, min=1, max=100)) -> None:
     paths = get_paths()
-    typer.echo(json.dumps(list_federated_runs(paths, limit=limit), indent=2))
+    emit_records("Federated Runs", list_federated_runs(paths, limit=limit), ["run_id", "client_column", "client_count", "rounds"])
 
 
 @app.command()
@@ -306,7 +422,7 @@ def dashboard(
 def storage_status() -> None:
     paths = get_paths()
     backend = get_storage_backend(paths)
-    typer.echo(json.dumps(backend.status().to_dict(), indent=2))
+    emit_summary("Storage Status", list(backend.status().to_dict().items()))
 
 
 @storage_app.command("sync")
@@ -318,14 +434,21 @@ def storage_sync(
     backend = get_storage_backend(paths)
     frame = _read_frame(source or paths.data_path)
     target = backend.save_parquet(frame, object_name)
-    typer.echo(json.dumps({"backend": backend.status().backend, "object_name": object_name, "target": target}, indent=2))
+    emit_summary(
+        "Storage Sync Complete",
+        [
+            ("Backend", backend.status().backend),
+            ("Object", object_name),
+            ("Target", target),
+        ],
+    )
 
 
 @lakehouse_app.command("build")
 def lakehouse_build() -> None:
     paths = get_paths()
     db_path = build_default_views(paths)
-    typer.echo(json.dumps({"lakehouse_db": str(db_path)}, indent=2))
+    emit_summary("Lakehouse Ready", [("Database", str(db_path))])
 
 
 @lakehouse_app.command("query")
@@ -335,7 +458,7 @@ def lakehouse_query(
 ) -> None:
     paths = get_paths()
     result = query_lakehouse(paths, sql=sql, limit=limit)
-    typer.echo(json.dumps(result.to_dict(), indent=2, default=str))
+    emit_json(result.to_dict())
 
 
 @spark_app.command("summary")
@@ -343,14 +466,11 @@ def spark_summary(
     data_path: Path | None = typer.Option(None, "--data-path"),
 ) -> None:
     source = data_path or get_paths().data_path
-    typer.echo(
-        json.dumps(
-            {
-                "spark_available": spark_available(),
-                "summary": summarise_parquet_with_spark(source) if spark_available() else None,
-            },
-            indent=2,
-        )
+    emit_json(
+        {
+            "spark_available": spark_available(),
+            "summary": summarise_parquet_with_spark(source) if spark_available() else None,
+        }
     )
 
 
@@ -365,17 +485,30 @@ def pipeline_run(
     optimize: str = typer.Option("standard", "--optimize"),
 ) -> None:
     paths = get_paths()
-    summary = run_end_to_end_pipeline(
-        paths=paths,
-        txns=txns,
-        users=users,
-        merchants=merchants,
-        fraud_rate=fraud_rate,
-        model_type=model,
-        sample_tx_path=sample_tx,
-        optimize_mode=optimize,
+    summary = run_staged_progress(
+        "Running end-to-end Rift pipeline",
+        [
+            (
+                "Generating data, training model, and scoring sample transaction",
+                lambda: run_end_to_end_pipeline(
+                    paths=paths,
+                    txns=txns,
+                    users=users,
+                    merchants=merchants,
+                    fraud_rate=fraud_rate,
+                    model_type=model,
+                    sample_tx_path=sample_tx,
+                    optimize_mode=optimize,
+                ),
+            ),
+        ],
     )
-    typer.echo(json.dumps(summary.to_dict(), indent=2))
+    emit_panel(
+        "Pipeline Complete",
+        "Setup → conflict → resolution: data generated, model trained, sample decision recorded, and artifacts persisted for replay.",
+        "green",
+    )
+    emit_syntax(summary.to_dict())
 
 
 @governance_app.command("generate-card")
@@ -385,7 +518,8 @@ def governance_generate_card(
     paths = get_paths()
     resolved_run = run_id or read_json(paths.runs_dir / "current_run.json")["run_id"]
     summary = generate_model_card(paths, resolved_run, repo_root=Path.cwd())
-    typer.echo(json.dumps(summary.to_dict(), indent=2))
+    emit_summary("Model Card Generated", [("Run ID", resolved_run), ("Model card", summary.model_card_path)])
+    emit_syntax(summary.to_dict())
 
 
 @monitor_app.command("drift")
@@ -397,49 +531,67 @@ def monitor_drift(
     model: str = typer.Option("graphsage_xgb", "--model"),
 ) -> None:
     paths = get_paths()
-    summary = run_drift_monitor(
-        paths=paths,
-        reference_path=reference_path,
-        current_path=current_path,
-        threshold=threshold,
-        trigger_retrain=trigger_retrain,
-        model_type=model,
+    summary = run_staged_progress(
+        "Monitoring drift",
+        [
+            (
+                "Comparing reference and current windows",
+                lambda: run_drift_monitor(
+                    paths=paths,
+                    reference_path=reference_path,
+                    current_path=current_path,
+                    threshold=threshold,
+                    trigger_retrain=trigger_retrain,
+                    model_type=model,
+                ),
+            ),
+        ],
     )
-    typer.echo(json.dumps(summary.to_dict(), indent=2))
+    emit_summary(
+        "Drift Report Complete",
+        [
+            ("Report ID", summary.report_id),
+            ("Drift score", f"{summary.drift_score:.4f}"),
+            ("Is drift", summary.is_drift),
+            ("Retrain triggered", summary.retrain_triggered),
+        ],
+    )
+    emit_syntax(summary.to_dict())
 
 
 @monitor_app.command("drift-status")
 def monitor_drift_status(limit: int = typer.Option(10, min=1, max=100)) -> None:
     paths = get_paths()
-    typer.echo(json.dumps(list_drift_reports(paths, limit=limit), indent=2, default=str))
+    emit_records(
+        "Drift Reports",
+        list_drift_reports(paths, limit=limit),
+        ["report_id", "drift_score", "is_drift", "retrain_triggered"],
+    )
 
 
 @app.command()
 def query(natural: str = typer.Option(..., "--natural")) -> None:
     paths = get_paths()
     result = answer_natural_language_query(paths, natural)
-    typer.echo(json.dumps(result.to_dict(), indent=2, default=str))
+    emit_json(result.to_dict())
 
 
 @sector_app.command("list")
 def sector_list() -> None:
-    typer.echo(json.dumps(available_sector_profiles(Path.cwd()), indent=2))
+    emit_json(available_sector_profiles(Path.cwd()))
 
 
 @sector_app.command("show")
 def sector_show(name: str = typer.Option(DEFAULT_PROFILE, "--name")) -> None:
     profile = load_sector_profile(Path.cwd(), name)
-    typer.echo(
-        json.dumps(
-            {
-                "name": profile.name,
-                "source_system": profile.source_system,
-                "field_aliases": profile.field_aliases,
-                "privacy_masks": profile.privacy_masks,
-                "added_columns": profile.added_columns,
-            },
-            indent=2,
-        )
+    emit_json(
+        {
+            "name": profile.name,
+            "source_system": profile.source_system,
+            "field_aliases": profile.field_aliases,
+            "privacy_masks": profile.privacy_masks,
+            "added_columns": profile.added_columns,
+        }
     )
 
 
@@ -451,14 +603,30 @@ def reengineer_simulate(
     sector: str = typer.Option(DEFAULT_PROFILE, "--sector"),
 ) -> None:
     paths = get_paths()
-    summary = simulate_legacy_migration(
-        paths=paths,
-        source=source,
-        output_path=output_path,
-        source_system=source_system,
-        sector=sector,
+    summary = run_staged_progress(
+        "Simulating legacy migration",
+        [
+            (
+                "Transforming source export into Rift-compatible output",
+                lambda: simulate_legacy_migration(
+                    paths=paths,
+                    source=source,
+                    output_path=output_path,
+                    source_system=source_system,
+                    sector=sector,
+                ),
+            ),
+        ],
     )
-    typer.echo(json.dumps(summary.to_dict(), indent=2))
+    emit_summary(
+        "Legacy Migration Simulation Complete",
+        [
+            ("Source system", source_system),
+            ("Output path", output_path),
+            ("Sector", sector),
+        ],
+    )
+    emit_syntax(summary.to_dict())
 
 
 if __name__ == "__main__":

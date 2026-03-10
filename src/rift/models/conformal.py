@@ -15,6 +15,9 @@ class ConformalClassifier:
     def fit(self, calibrated_probabilities: np.ndarray, labels: np.ndarray) -> None:
         probs = np.asarray(calibrated_probabilities, dtype=float)
         y = np.asarray(labels, dtype=int)
+        if probs.size == 0:
+            self.threshold = 0.5
+            return
         scores = np.where(y == 1, 1.0 - probs, probs)
         q_level = min(1.0, np.ceil((scores.size + 1) * (1.0 - self.alpha)) / scores.size)
         self.threshold = float(np.quantile(scores, q_level, method="higher"))

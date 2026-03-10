@@ -5,10 +5,14 @@ from sklearn.metrics import average_precision_score, brier_score_loss, roc_curve
 
 
 def pr_auc(labels: np.ndarray, probabilities: np.ndarray) -> float:
+    if len(labels) == 0 or len(np.unique(labels)) < 2:
+        return 0.0
     return float(average_precision_score(labels, probabilities))
 
 
 def recall_at_fpr(labels: np.ndarray, probabilities: np.ndarray, target_fpr: float = 0.01) -> float:
+    if len(labels) == 0 or len(np.unique(labels)) < 2:
+        return 0.0
     fpr, tpr, _ = roc_curve(labels, probabilities)
     valid = np.where(fpr <= target_fpr)[0]
     if valid.size == 0:
@@ -17,12 +21,16 @@ def recall_at_fpr(labels: np.ndarray, probabilities: np.ndarray, target_fpr: flo
 
 
 def brier(labels: np.ndarray, probabilities: np.ndarray) -> float:
+    if len(labels) == 0:
+        return 0.0
     return float(brier_score_loss(labels, probabilities))
 
 
 def expected_calibration_error(labels: np.ndarray, probabilities: np.ndarray, bins: int = 10) -> float:
     labels = np.asarray(labels, dtype=int)
     probabilities = np.asarray(probabilities, dtype=float)
+    if labels.size == 0:
+        return 0.0
     edges = np.linspace(0.0, 1.0, bins + 1)
     ece = 0.0
     for idx in range(bins):
