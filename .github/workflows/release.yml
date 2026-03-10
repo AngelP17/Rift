@@ -1,0 +1,131 @@
+name: Rift Release — Build, Sign, Attest
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+  attestations: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push container image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/rift-app.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign container image (keyless OIDC)
+        run: |
+          cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          artifact-name: rift-sbom.spdx.json
+          output-file: rift-sbom.spdx.json
+
+      - name: Attest SBOM to image
+        run: |
+          cosign attest --yes --predicate rift-sbom.spdx.json \
+            --type spdxjson \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+
+      - name: Generate provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+  bundle-and-release:
+    runs-on: ubuntu-latest
+    needs: build-and-sign
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Rift
+        run: |
+          pip install -e ".[dev]"
+          pip install pyarrow rich python-dotenv structlog shap
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Generate model bundle
+        run: |
+          PYTHONPATH=src python -m rift.cli.main generate --txns 5000 --users 200 --merchants 50 --fraud-rate 0.04
+          PYTHONPATH=src python -m rift.cli.main train --model graphsage_xgb --time-split
+
+      - name: Package model bundle
+        run: |
+          tar czf rift-model-bundle-${{ github.ref_name }}.tar.gz \
+            .rift/runs/ \
+            configs/ \
+            docs/templates/ \
+            demo/sample_transaction.json
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign model bundle (keyless OIDC)
+        run: |
+          cosign sign-blob --yes \
+            --output-signature rift-model-bundle-${{ github.ref_name }}.sig \
+            --output-certificate rift-model-bundle-${{ github.ref_name }}.cert \
+            rift-model-bundle-${{ github.ref_name }}.tar.gz
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            rift-model-bundle-${{ github.ref_name }}.tar.gz
+            rift-model-bundle-${{ github.ref_name }}.sig
+            rift-model-bundle-${{ github.ref_name }}.cert
+            rift-sbom.spdx.json
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
