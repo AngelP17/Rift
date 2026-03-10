@@ -13,9 +13,9 @@ The Rift Operations Dashboard is the governance-focused UI layer that surfaces p
 Start the server:
 
 ```bash
-rift serve --port 8000
+rift dashboard --port 8000
 # or
-python -m rift.cli.main serve
+python -m rift.cli.main dashboard --host 127.0.0.1 --port 8000
 ```
 
 Then visit `http://localhost:8000/dashboard`.
@@ -25,7 +25,7 @@ Then visit `http://localhost:8000/dashboard`.
 ```mermaid
 flowchart TD
     subgraph backend ["FastAPI Backend"]
-        SNAP[dashboard_snapshot] --> KPIS[build_kpi_cards]
+        SNAP[dashboard_snapshot] --> KPIS[KPI Card Builder]
         SNAP --> TABLES[Data Tables]
         KPIS --> RENDER[build_dashboard_html]
         TABLES --> RENDER
@@ -34,12 +34,11 @@ flowchart TD
 
     subgraph static ["Static Assets"]
         CSS[dashboard.css] --> HTML
-        TPL[Jinja2 Templates] --> RENDER
     end
 
     subgraph routes ["Dashboard Routes"]
         HTML --> DASH["GET /dashboard"]
-        HTML --> ETL["GET /dashboard/governance"]
+        HTML --> LAND["GET /"]
         JSON[dashboard_snapshot JSON] --> API["GET /dashboard/summary"]
     end
 
@@ -54,21 +53,19 @@ flowchart TD
 
 The dashboard is built with a hybrid rendering approach:
 
-- **Server-rendered HTML** in `src/rift/dashboard/views.py` (~2,900 lines) generates the full dashboard, landing page, and governance detail pages using Python f-strings with `html.escape()` for XSS safety.
+- **Server-rendered HTML** in `src/rift/dashboard/views.py` generates the full dashboard and landing page using Python f-strings with `html.escape()` for XSS safety.
 - **Static CSS** in `src/rift/dashboard/static/dashboard.css` provides the enterprise dark theme with CSS custom properties.
-- **Jinja2 templates** in `src/rift/dashboard/templates/` provide reusable partials for cards, tables, and layouts.
 - **Next.js frontend** in `frontend/` provides an optional React-based dashboard with Tailwind CSS, charts (Recharts), and animated components.
 
 ### Key Files
 
 | File | Purpose |
 |---|---|
-| `src/rift/dashboard/views.py` | Dashboard snapshot collection, HTML rendering, governance detail builders, landing page |
+| `src/rift/dashboard/views.py` | Dashboard snapshot collection, HTML rendering, landing page |
 | `src/rift/dashboard/kpis.py` | Centralized KPI threshold logic with color-coded status bands |
 | `src/rift/dashboard/__init__.py` | Package exports |
 | `src/rift/dashboard/static/dashboard.css` | Dark theme CSS with responsive breakpoints |
-| `src/rift/dashboard/templates/` | Jinja2 partials (cards, tables, quick links) |
-| `src/rift/api/server.py` | FastAPI routes for dashboard, drilldowns, exports |
+| `src/rift/api/server.py` | FastAPI routes for dashboard, exports, predictions |
 | `frontend/` | Optional Next.js/React dashboard |
 
 ## KPI Cards
@@ -113,35 +110,46 @@ Each table shows guided empty states with CLI commands when no records exist.
 
 ## API Routes
 
-### Dashboard Routes
+### Dashboard and Landing Routes
 
 | Method | Endpoint | Returns |
 |---|---|---|
-| GET | `/dashboard` | Full HTML dashboard |
+| GET | `/` | Landing page (HTML) |
+| GET | `/dashboard` | Full operations dashboard (HTML) |
 | GET | `/dashboard/summary` | JSON snapshot |
-| GET | `/dashboard/governance` | Governance detail page (HTML) |
 
 ### Export Routes
 
 | Method | Endpoint | Returns |
 |---|---|---|
-| GET | `/exports/model-card/{run_id}` | Markdown model card download |
-| GET | `/exports/audit/{decision_id}?format=md` | Markdown audit report download |
-| GET | `/exports/audit/{decision_id}?format=json` | JSON audit report download |
+| GET | `/dashboard/export/model-card` | Download latest model card as markdown |
+| GET | `/dashboard/export/audit` | Download latest audit report as markdown |
 
-### Data Routes
+### Prediction and Audit Routes
 
 | Method | Endpoint | Returns |
 |---|---|---|
-| GET | `/etl/status` | Recent ETL runs |
+| POST | `/predict` | Score a transaction and record decision |
+| GET | `/replay/{decision_id}` | Replay a past decision |
+| GET | `/audit/{decision_id}` | Get audit report for a decision |
+| GET | `/metrics/latest` | Latest model metrics |
+| GET | `/models/current` | Current model info |
+
+### Governance and Monitoring Routes
+
+| Method | Endpoint | Returns |
+|---|---|---|
+| POST | `/governance/model-card/{run_id}` | Generate model card for a run |
 | GET | `/fairness/status` | Recent fairness audits |
 | GET | `/monitor/drift-status` | Recent drift reports |
-| GET | `/federated/status` | Federated training runs |
+| GET | `/query?natural=...` | Natural language query |
+| GET | `/etl/status` | Recent ETL runs |
 | GET | `/datasets/status` | Prepared datasets |
+| GET | `/federated/status` | Federated training runs |
 | GET | `/storage/status` | Storage backend info |
 | GET | `/lakehouse/status` | Lakehouse DB path |
 | GET | `/lakehouse/query?sql=...` | Run SQL against lakehouse |
-| GET | `/query?natural=...` | Natural language query |
+| GET | `/health` | Health check |
 
 ## Next.js Frontend (Optional)
 

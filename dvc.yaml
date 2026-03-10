@@ -1,0 +1,52 @@
+stages:
+  generate_demo_data:
+    cmd: PYTHONPATH=src python -m rift.cli.main generate --txns 10000 --users 500 --merchants 100 --fraud-rate 0.04
+    deps:
+      - src/rift/data/generator.py
+    outs:
+      - .rift/data/transactions.parquet
+
+  train_model:
+    cmd: PYTHONPATH=src python -m rift.cli.main train --model graphsage_xgb --time-split --optimize green
+    deps:
+      - .rift/data/transactions.parquet
+      - src/rift/models/train.py
+      - src/rift/features/engine.py
+      - src/rift/graph/builder.py
+    outs:
+      - .rift/runs/current_run.json
+    metrics:
+      - .rift/runs/current_run.json:
+          cache: false
+
+  fairness_audit:
+    cmd: PYTHONPATH=src python -m rift.cli.main fairness audit --sensitive-column channel
+    deps:
+      - .rift/runs/current_run.json
+      - src/rift/governance/fairness.py
+    outs:
+      - .rift/governance/fairness/:
+          cache: false
+
+  generate_model_card:
+    cmd: PYTHONPATH=src python -m rift.cli.main governance generate-card
+    deps:
+      - .rift/runs/current_run.json
+      - src/rift/governance/model_cards.py
+      - docs/templates/model_card.md.j2
+    outs:
+      - .rift/governance/model_cards/:
+          cache: false
+
+  drift_check:
+    cmd: >
+      PYTHONPATH=src python -m rift.cli.main monitor drift
+      --reference-path .rift/data/transactions.parquet
+      --current-path .rift/data/transactions.parquet
+      --threshold 0.2
+    deps:
+      - .rift/data/transactions.parquet
+      - src/rift/monitoring/drift.py
+    outs:
+      - .rift/governance/drift/:
+          cache: false
