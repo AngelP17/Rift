@@ -594,18 +594,33 @@ flowchart LR
     API --> DB
 ```
 
-**API Endpoints:**
+**API Endpoints (FastAPI at `src/rift/api/server.py`):**
 
 | Method | Endpoint | Description |
 |---|---|---|
+| GET | `/health` | Health check |
+| GET | `/` | Landing page (HTML) |
 | POST | `/predict` | Score a transaction and record the decision |
 | GET | `/replay/{decision_id}` | Replay a past decision for verification |
-| GET | `/audit/{decision_id}` | Generate or retrieve an audit report |
-| GET | `/metrics/latest` | Get metrics for the latest trained model |
-| GET | `/models/current` | Get info about the currently deployed model |
-| GET | `/health` | Health check |
+| GET | `/audit/{decision_id}` | Get audit report |
+| GET | `/dashboard` | Operations dashboard (HTML) |
+| GET | `/dashboard/summary` | Dashboard data (JSON) |
+| GET | `/dashboard/export/model-card` | Download latest model card (markdown) |
+| GET | `/dashboard/export/audit` | Download latest audit report (markdown) |
+| POST | `/governance/model-card/{run_id}` | Generate model card for a run |
+| GET | `/metrics/latest` | Latest model metrics |
+| GET | `/models/current` | Current model info |
+| GET | `/etl/status` | ETL run history |
+| GET | `/fairness/status` | Fairness audit history |
+| GET | `/federated/status` | Federated training runs |
+| GET | `/datasets/status` | Prepared datasets |
+| GET | `/monitor/drift-status` | Drift reports |
+| GET | `/query?natural=...` | Natural language query |
+| GET | `/lakehouse/status` | Lakehouse DB path |
+| GET | `/lakehouse/query?sql=...` | SQL against lakehouse |
+| GET | `/storage/status` | Storage backend info |
 
-**CLI Commands:**
+**CLI Commands (`rift.cli.main`):**
 
 | Command | Description |
 |---|---|
@@ -615,11 +630,16 @@ flowchart LR
 | `rift replay` | Replay a past decision |
 | `rift audit` | Generate an audit report |
 | `rift export` | Bulk export decisions |
-| `rift validate` | Run Deepchecks validation suite |
-| `rift monitor` | Generate drift reports or launch dashboard |
+| `rift dashboard` | Start the FastAPI server and operations dashboard |
 | `rift query` | Natural language audit queries (Ollama) |
-| `rift search-audits` | Semantic search over audit records |
-| `rift serve` | Start the FastAPI server |
+| `rift etl` | Run ETL pipelines |
+| `rift fairness` | Run fairness audits |
+| `rift monitor` | Drift monitoring |
+| `rift governance` | Model card generation |
+| `rift federated` | Federated training scaffolding |
+| `rift lakehouse` | Lakehouse SQL queries |
+| `rift storage` | Storage backend management |
+| `rift sector` | Sector profile management |
 
 ---
 

@@ -132,23 +132,56 @@ Served at `GET /dashboard` via FastAPI. See [docs/dashboard.md](dashboard.md) fo
 
 ## API Endpoints
 
+```mermaid
+flowchart LR
+    subgraph core ["Core"]
+        P[POST /predict]
+        R[GET /replay/id]
+        A[GET /audit/id]
+    end
+    subgraph dash ["Dashboard"]
+        D[GET /dashboard]
+        DS[GET /dashboard/summary]
+        DL[GET /]
+    end
+    subgraph export ["Exports"]
+        EMC[GET /dashboard/export/model-card]
+        EA[GET /dashboard/export/audit]
+    end
+    subgraph gov ["Governance"]
+        MC[POST /governance/model-card/run_id]
+        F[GET /fairness/status]
+        DR[GET /monitor/drift-status]
+        Q[GET /query]
+    end
+
+    CLIENT[Client] --> core
+    CLIENT --> dash
+    CLIENT --> export
+    CLIENT --> gov
+```
+
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/health` | Health check |
+| GET | `/` | Landing page (HTML) |
 | POST | `/predict` | Score a transaction |
 | GET | `/replay/{decision_id}` | Replay a decision |
 | GET | `/audit/{decision_id}` | Get audit report |
 | GET | `/dashboard` | Operations dashboard (HTML) |
 | GET | `/dashboard/summary` | Dashboard data (JSON) |
-| GET | `/dashboard/governance` | Governance detail page |
-| GET | `/exports/model-card/{run_id}` | Download model card |
-| GET | `/exports/audit/{decision_id}` | Download audit report |
+| GET | `/dashboard/export/model-card` | Download latest model card (markdown) |
+| GET | `/dashboard/export/audit` | Download latest audit report (markdown) |
+| POST | `/governance/model-card/{run_id}` | Generate model card for a run |
 | GET | `/metrics/latest` | Latest model metrics |
 | GET | `/models/current` | Current model info |
 | GET | `/etl/status` | ETL run history |
 | GET | `/fairness/status` | Fairness audit history |
+| GET | `/federated/status` | Federated training runs |
+| GET | `/datasets/status` | Prepared datasets |
 | GET | `/monitor/drift-status` | Drift reports |
 | GET | `/query?natural=...` | Natural language query |
+| GET | `/lakehouse/status` | Lakehouse DB path |
 | GET | `/lakehouse/query?sql=...` | SQL against lakehouse |
 | GET | `/storage/status` | Storage backend info |
 
