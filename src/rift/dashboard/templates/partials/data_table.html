@@ -1,0 +1,40 @@
+{# Reusable data table partial with guided empty state #}
+<section class="panel">
+  <h2>{{ title }}</h2>
+  {% if rows %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+        {% for col in columns %}
+          <th>{{ col }}</th>
+        {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in rows %}
+        <tr>
+        {% for col in columns %}
+          <td>{{ row.get(col, '') }}</td>
+        {% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif empty_state %}
+  <div class="empty-state">
+    <p>{{ empty_state.message }}</p>
+    {% if empty_state.cli_command %}
+      <code>{{ empty_state.cli_command }}</code>
+    {% endif %}
+    {% if empty_state.action_href %}
+      <div class="action-link">
+        <a href="{{ empty_state.action_href }}" class="btn btn-sm btn-secondary">{{ empty_state.action_label }}</a>
+      </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="empty-state"><p>No records yet.</p></div>
+  {% endif %}
+</section>

@@ -1,0 +1,5 @@
+<nav class="quick-links">
+{% for link in quick_actions %}
+  <a class="quick-link" href="{{ link.href }}">{{ link.label }}</a>
+{% endfor %}
+</nav>

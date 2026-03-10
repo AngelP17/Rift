@@ -1,14 +1,20 @@
+"""Dashboard views: data loading, template rendering, and drill-down builders."""
+
 from __future__ import annotations
 
 import html
 import json
 import subprocess
+from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import duckdb
 
+from rift.dashboard.kpis import (
+    EMPTY_STATES,
+)
 from rift.datasets.adapters import list_prepared_datasets
 from rift.etl.pipeline import list_etl_runs
 from rift.federated.simulation import list_federated_runs
@@ -188,18 +194,51 @@ def _render_cards(kpis: dict[str, Any], current_metrics: dict[str, Any] | None) 
 def _render_table(title: str, columns: list[str], rows: list[dict[str, Any]]) -> str:
     if not rows:
         return f"<section class='panel'><h2>{html.escape(title)}</h2><p class='empty'>No records yet.</p></section>"
-    header = "".join(f"<th>{html.escape(column)}</th>" for column in columns)
-    body_rows = []
+    header = "".join(f"<th>{html.escape(c)}</th>" for c in columns)
+    body = []
     for row in rows:
-        body_rows.append(
-            "<tr>"
-            + "".join(f"<td>{html.escape(str(row.get(column, '')))}</td>" for column in columns)
-            + "</tr>"
-        )
+        body.append("<tr>" + "".join(f"<td>{html.escape(str(row.get(c, '')))}</td>" for c in columns) + "</tr>")
     return (
         f"<section class='panel'><h2>{html.escape(title)}</h2>"
-        f"<div class='table-wrap'><table><thead><tr>{header}</tr></thead><tbody>{''.join(body_rows)}</tbody></table></div>"
-        "</section>"
+        f"<div class='table-wrap'><table><thead><tr>{header}</tr></thead>"
+        f"<tbody>{''.join(body)}</tbody></table></div></section>"
+    )
+
+
+def build_detail_html(
+    paths: RiftPaths,
+    page_title: str,
+    page_description: str,
+    sections: list[dict[str, Any]],
+) -> str:
+    parts = [
+        f"<h1>{html.escape(page_title)}</h1>",
+        f"<p>{html.escape(page_description)}</p>",
+    ]
+    for section in sections:
+        title = section.get("title", "")
+        columns = section.get("columns", [])
+        rows = section.get("rows", [])
+        parts.append(_render_table(title, columns, rows))
+    return "\n".join(parts)
+
+
+def build_governance_detail(paths: RiftPaths) -> str:
+    fairness = list_fairness_audits(paths, limit=50)
+    drift = list_drift_reports(paths, limit=50)
+    return build_detail_html(
+        paths, "Governance & Compliance",
+        "Fairness audits, drift monitoring reports, and model card generation status.",
+        [
+            {"title": "Fairness Audits",
+             "columns": ["audit_id", "sensitive_column", "demographic_parity_difference", "disparate_impact_ratio", "report_path"],
+             "rows": fairness,
+             "empty_state": asdict(EMPTY_STATES["fairness"]) if not fairness else None},
+            {"title": "Drift Reports",
+             "columns": ["report_id", "drift_score", "is_drift", "retrain_triggered", "report_path"],
+             "rows": drift,
+             "empty_state": asdict(EMPTY_STATES["drift"]) if not drift else None},
+        ],
     )
 
 
@@ -2924,3 +2963,8 @@ def build_landing_html(paths: RiftPaths) -> str:
         .replace("__VERSION__", html.escape(str(payload["version"])))
         .replace("__GIT_COMMIT__", html.escape(str(payload["gitCommit"])))
     )
+
+
+def get_static_dir() -> Path:
+    """Return path to the dashboard static assets directory."""
+    return Path(__file__).parent / "static"

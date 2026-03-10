@@ -1,23 +1,25 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from rift.lakehouse.sql import build_default_views, query_lakehouse
 from rift.data.schemas import PredictionRequest
-from rift.dashboard.views import build_dashboard_html, build_landing_html, dashboard_snapshot
+from rift.dashboard.views import build_dashboard_html, build_landing_html, dashboard_snapshot, get_static_dir
 from rift.datasets.adapters import list_prepared_datasets
 from rift.etl.pipeline import list_etl_runs
+from rift.explain.report import build_audit_report, build_explanation, report_to_markdown
 from rift.federated.simulation import list_federated_runs
 from rift.governance.fairness import list_fairness_audits
 from rift.governance.model_cards import generate_model_card
+from rift.models.infer import load_run, payload_to_frame, score_frame
 from rift.monitoring.drift import list_drift_reports
 from rift.monitoring.nl_query import answer_natural_language_query
-from rift.explain.report import build_audit_report, build_explanation, report_to_markdown
-from rift.models.infer import load_run, payload_to_frame, score_frame
 from rift.replay.hashing import decision_hash
 from rift.replay.recorder import record_decision
 from rift.replay.replayer import replay_decision
@@ -26,7 +28,20 @@ from rift.utils.config import get_paths
 from rift.utils.io import read_json
 
 
-app = FastAPI(title="Rift API", version="0.1.0")
+app = FastAPI(title="Rift API", version="1.0.0")
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+app.mount("/static", StaticFiles(directory=str(get_static_dir())), name="static")
+
+
+@app.get("/health")
+def health() -> dict:
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
 
 app.add_middleware(
     CORSMiddleware,
@@ -160,13 +175,15 @@ def natural_query(natural: str) -> dict:
     return answer_natural_language_query(get_paths(), natural).to_dict()
 
 
+# ── Dashboard routes ──────────────────────────────────────────────
+
 @app.get("/dashboard/summary")
-def dashboard_summary() -> dict:
+def dashboard_summary_json() -> dict:
     return dashboard_snapshot(get_paths())
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard() -> HTMLResponse:
+def dashboard_index() -> HTMLResponse:
     return HTMLResponse(build_dashboard_html(get_paths()))
 
 
@@ -215,7 +232,7 @@ def export_audit_report() -> PlainTextResponse:
 
 @app.post("/governance/model-card/{run_id}")
 def model_card(run_id: str) -> dict:
-    return generate_model_card(get_paths(), run_id, repo_root=Path("/workspace")).to_dict()
+    return generate_model_card(get_paths(), run_id, repo_root=_REPO_ROOT).to_dict()
 
 
 @app.get("/storage/status")

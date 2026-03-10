@@ -1,11 +1,20 @@
-# Rift
-
-**Graph ML for fraud detection, replay, and audit**
+# Rift: Auditable Graph-Based Fraud Intelligence Platform
 
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-81%20passing-brightgreen)]()
 
-Rift is an auditable fraud detection system that combines graph-aware fraud scoring, calibrated probabilities, conformal uncertainty, deterministic replay, plain-English audit reports, and zero-cost local governance tooling.
+Rift is a **full, open-source, zero-cost, local-first ML platform** for fraud detection with:
+
+- **GraphSAGE + XGBoost hybrid modeling** with temporal robustness
+- **Deterministic replay and audit trails** (SHA-256 + DuckDB)
+- **Governance** (model cards, drift monitoring, fairness audits)
+- **Sector extensibility** (YAML profiles with privacy masking)
+- **Green optimization** and legacy reengineering
+- **Natural-language audit queries** (Ollama + deterministic SQL fallback)
+- **Operations Dashboard** at `localhost:8000/dashboard` for at-a-glance governance, lineage, and model health
+
+The real power is in the backend pipeline and compliance features -- the dashboard is the professional interface that makes it usable and demo-ready.
 
 ```mermaid
 flowchart LR
@@ -43,7 +52,20 @@ Rift is designed to demonstrate five claims:
 4. uncertainty belongs in high-stakes workflows;
 5. explanations must be usable by non-technical reviewers.
 
-## Quick start
+## Try in Google Colab (zero install)
+
+Run any notebook directly in your browser -- no local setup required:
+
+| Notebook | Description | Colab |
+|---|---|---|
+| 01 Data Generation | Synthetic transactions with 7 fraud patterns | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/01_data_generation.ipynb) |
+| 02 Graph Construction | Heterogeneous graph with 5 node types, 7 edge types | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/02_graph_construction.ipynb) |
+| 03 Model Ablation | XGBoost vs GraphSAGE vs Hybrid vs GAT comparison | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/03_model_ablation.ipynb) |
+| 04 Calibration | Platt vs Isotonic calibration on ECE and Brier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/04_calibration.ipynb) |
+| 05 Conformal Prediction | Uncertainty-aware 3-class fraud triage | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/05_conformal.ipynb) |
+| 06 Audit Examples | Plain-English reports, replay, lineage, PII redaction | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/06_audit_examples.ipynb) |
+
+## Quick start (local)
 
 Install the project in editable mode:
 
