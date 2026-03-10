@@ -52,7 +52,20 @@ Rift is designed to demonstrate five claims:
 4. uncertainty belongs in high-stakes workflows;
 5. explanations must be usable by non-technical reviewers.
 
-## Quick start
+## Try in Google Colab (zero install)
+
+Run any notebook directly in your browser -- no local setup required:
+
+| Notebook | Description | Colab |
+|---|---|---|
+| 01 Data Generation | Synthetic transactions with 7 fraud patterns | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/01_data_generation.ipynb) |
+| 02 Graph Construction | Heterogeneous graph with 5 node types, 7 edge types | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/02_graph_construction.ipynb) |
+| 03 Model Ablation | XGBoost vs GraphSAGE vs Hybrid vs GAT comparison | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/03_model_ablation.ipynb) |
+| 04 Calibration | Platt vs Isotonic calibration on ECE and Brier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/04_calibration.ipynb) |
+| 05 Conformal Prediction | Uncertainty-aware 3-class fraud triage | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/05_conformal.ipynb) |
+| 06 Audit Examples | Plain-English reports, replay, lineage, PII redaction | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AngelP17/Rift/blob/main/notebooks/06_audit_examples.ipynb) |
+
+## Quick start (local)
 
 Install the project in editable mode:
 
