@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - Rift{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="/dashboard">Dashboard</a> &rsaquo; {{ page_title }}
+</div>
+
+<section class="hero" style="padding:20px 28px;">
+  <h1>{{ page_title }}</h1>
+  <p>{{ page_description }}</p>
+</section>
+
+{% for section in sections %}
+<section class="panel" style="margin-bottom:18px;">
+  <h2>{{ section.title }}</h2>
+  {% if section.rows %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+        {% for col in section.columns %}
+          <th>{{ col }}</th>
+        {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in section.rows %}
+        <tr>
+        {% for col in section.columns %}
+          <td>{{ row.get(col, '') }}</td>
+        {% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif section.empty_state %}
+  <div class="empty-state">
+    <p>{{ section.empty_state.message }}</p>
+    {% if section.empty_state.cli_command %}
+      <code>{{ section.empty_state.cli_command }}</code>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="empty-state"><p>No records available.</p></div>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

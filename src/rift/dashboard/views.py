@@ -1,12 +1,22 @@
+"""Dashboard views: data loading, template rendering, and drill-down builders."""
+
 from __future__ import annotations
 
-import html
 import json
+import subprocess
+from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import duckdb
+from jinja2 import Environment, FileSystemLoader
 
+from rift.dashboard.kpis import (
+    EMPTY_STATES,
+    QUICK_ACTIONS,
+    build_kpi_cards,
+)
 from rift.datasets.adapters import list_prepared_datasets
 from rift.etl.pipeline import list_etl_runs
 from rift.federated.simulation import list_federated_runs
@@ -15,6 +25,25 @@ from rift.monitoring.drift import list_drift_reports
 from rift.storage.backends import get_storage_backend
 from rift.utils.config import RiftPaths
 from rift.utils.io import read_json
+
+VERSION = "1.0.0"
+
+_TEMPLATE_DIR = Path(__file__).parent / "templates"
+_STATIC_DIR = Path(__file__).parent / "static"
+
+_env = Environment(
+    loader=FileSystemLoader(str(_TEMPLATE_DIR)),
+    autoescape=True,
+)
+
+
+def _git_short_sha() -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL, text=True,
+        ).strip()
+    except Exception:
+        return "unknown"
 
 
 def _safe_read_json(path: Path) -> dict[str, Any] | None:
@@ -92,175 +121,132 @@ def dashboard_snapshot(paths: RiftPaths) -> dict[str, Any]:
     }
 
 
-def _render_cards(kpis: dict[str, Any], current_metrics: dict[str, Any] | None) -> str:
-    cards = [
-        ("ETL Runs", str(kpis["etl_runs"])),
-        ("Fairness Audits", str(kpis["fairness_audits"])),
-        ("Drift Reports", str(kpis["drift_reports"])),
-        ("Federated Runs", str(kpis["federated_runs"])),
-        ("Recorded Audits", str(kpis["recent_audits"])),
-    ]
-    if current_metrics:
-        cards.append(("Current PR-AUC", f"{current_metrics['metrics'].get('pr_auc', 0.0):.3f}"))
-        cards.append(("Current ECE", f"{current_metrics['metrics'].get('ece', 0.0):.3f}"))
-    return "".join(
-        f"<div class='card'><div class='label'>{html.escape(label)}</div><div class='value'>{html.escape(value)}</div></div>"
-        for label, value in cards
-    )
-
-
-def _render_table(title: str, columns: list[str], rows: list[dict[str, Any]]) -> str:
-    if not rows:
-        return f"<section class='panel'><h2>{html.escape(title)}</h2><p class='empty'>No records yet.</p></section>"
-    header = "".join(f"<th>{html.escape(column)}</th>" for column in columns)
-    body_rows = []
-    for row in rows:
-        body_rows.append(
-            "<tr>"
-            + "".join(f"<td>{html.escape(str(row.get(column, '')))}</td>" for column in columns)
-            + "</tr>"
-        )
-    return (
-        f"<section class='panel'><h2>{html.escape(title)}</h2>"
-        f"<div class='table-wrap'><table><thead><tr>{header}</tr></thead><tbody>{''.join(body_rows)}</tbody></table></div>"
-        "</section>"
-    )
+def _base_context(paths: RiftPaths, snapshot: dict[str, Any] | None = None) -> dict[str, Any]:
+    if snapshot is None:
+        snapshot = dashboard_snapshot(paths)
+    current_run = snapshot.get("current_model")
+    return {
+        "version": VERSION,
+        "commit_sha": _git_short_sha(),
+        "run_id": current_run["run_id"] if current_run else "none",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
 
 
 def build_dashboard_html(paths: RiftPaths) -> str:
     snapshot = dashboard_snapshot(paths)
-    current_run = snapshot["current_model"]
-    current_metrics = snapshot["current_metrics"]
-    prepared_dataset_rows = [item.get("summary", {}) for item in snapshot["prepared_datasets"]]
-    storage_status = snapshot["storage_status"]
-    hero = "No active model run"
-    if current_run:
-        hero = f"Current model run: {current_run['run_id']}"
+    kpi_cards = build_kpi_cards(snapshot["kpis"], snapshot["current_metrics"])
+    prepared_rows = [item.get("summary", {}) for item in snapshot["prepared_datasets"]]
 
-    return f"""
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Rift Operations Dashboard</title>
-  <style>
-    :root {{
-      --bg: #0b1020;
-      --panel: #121a31;
-      --panel-2: #17223f;
-      --text: #f3f6ff;
-      --muted: #aab5d1;
-      --accent: #6ea8fe;
-      --border: #2a365e;
-      --good: #2fbf71;
-    }}
-    * {{ box-sizing: border-box; }}
-    body {{
-      margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: linear-gradient(180deg, #08101d, #10192e 35%, #0a1221);
-      color: var(--text);
-    }}
-    .shell {{
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 32px 24px 48px;
-    }}
-    .hero {{
-      background: linear-gradient(135deg, rgba(110,168,254,0.18), rgba(47,191,113,0.12));
-      border: 1px solid rgba(110,168,254,0.25);
-      border-radius: 20px;
-      padding: 28px;
-      margin-bottom: 24px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
-    }}
-    .hero h1 {{ margin: 0 0 8px; font-size: 30px; }}
-    .hero p {{ margin: 0; color: var(--muted); }}
-    .grid {{
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 18px;
-    }}
-    .cards {{
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
-    }}
-    .card, .panel {{
-      background: rgba(18,26,49,0.92);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      box-shadow: 0 16px 32px rgba(0,0,0,0.18);
-    }}
-    .card {{
-      padding: 18px;
-      min-height: 118px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }}
-    .label {{ color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }}
-    .value {{ font-size: 30px; font-weight: 700; }}
-    .panel {{ padding: 18px; }}
-    .panel h2 {{ margin: 0 0 14px; font-size: 18px; }}
-    .table-wrap {{ overflow-x: auto; }}
-    table {{ width: 100%; border-collapse: collapse; font-size: 14px; }}
-    th, td {{ text-align: left; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }}
-    th {{ color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }}
-    .two-up {{
-      grid-column: span 6;
-    }}
-    .full {{
-      grid-column: 1 / -1;
-    }}
-    .empty {{ color: var(--muted); }}
-    .note {{
-      margin-top: 14px;
-      color: var(--muted);
-      font-size: 13px;
-    }}
-    @media (max-width: 1024px) {{
-      .two-up {{ grid-column: 1 / -1; }}
-    }}
-  </style>
-</head>
-<body>
-  <div class="shell">
-    <section class="hero">
-      <h1>Rift Operations Dashboard</h1>
-      <p>{html.escape(hero)}. Open-source, zero-cost, local-first oversight for ETL lineage, fairness governance, federated runs, and audit review.</p>
-    </section>
-    <section class="cards">
-      {_render_cards(snapshot["kpis"], current_metrics)}
-    </section>
-    <section class="grid">
-      <div class="two-up">
-        {_render_table("Latest ETL Runs", ["run_id", "source_system", "rows_valid", "rows_invalid", "duplicates_removed"], snapshot["etl_runs"])}
-      </div>
-      <div class="two-up">
-        {_render_table("Recent Fairness Audits", ["audit_id", "sensitive_column", "demographic_parity_difference", "disparate_impact_ratio"], snapshot["fairness_audits"])}
-      </div>
-      <div class="two-up">
-        {_render_table("Recent Drift Reports", ["report_id", "drift_score", "is_drift", "retrain_triggered"], snapshot["drift_reports"])}
-      </div>
-      <div class="two-up">
-        {_render_table("Federated Training Runs", ["run_id", "client_column", "client_count", "rounds"], snapshot["federated_runs"])}
-      </div>
-      <div class="two-up">
-        {_render_table("Prepared Public Datasets", ["dataset_id", "adapter", "rows_prepared", "auto_etl_run_id"], prepared_dataset_rows)}
-      </div>
-      <div class="full">
-        {_render_table("Recent Audit Decisions", ["decision_id", "model_run_id", "decision", "calibrated_probability", "confidence"], snapshot["recent_audits"])}
-      </div>
-      <div class="full panel">
-        <h2>Operating notes</h2>
-        <p class="note">Storage backend: <strong>{html.escape(str(storage_status.get("backend")))}</strong>. {html.escape(str(storage_status.get("details")))}</p>
-        <p class="note">This dashboard is served locally from Rift's FastAPI application and reads only from local Parquet, DuckDB, JSON artifacts, and optional MinIO-compatible object storage under <code>.rift/</code>. No paid SaaS, proprietary cloud service, or closed-source UI dependency is required.</p>
-      </div>
-    </section>
-  </div>
-</body>
-</html>
-"""
+    ctx = {
+        **_base_context(paths, snapshot),
+        "kpi_cards": [c.to_dict() for c in kpi_cards],
+        "quick_actions": [asdict(a) for a in QUICK_ACTIONS],
+        "etl_runs": snapshot["etl_runs"],
+        "fairness_audits": snapshot["fairness_audits"],
+        "drift_reports": snapshot["drift_reports"],
+        "federated_runs": snapshot["federated_runs"],
+        "prepared_datasets": prepared_rows,
+        "recent_audits": snapshot["recent_audits"],
+        "storage_status": snapshot["storage_status"],
+        "empty_states": {k: asdict(v) for k, v in EMPTY_STATES.items()},
+    }
+    return _env.get_template("index.html").render(**ctx)
+
+
+def build_detail_html(
+    paths: RiftPaths,
+    page_title: str,
+    page_description: str,
+    sections: list[dict[str, Any]],
+) -> str:
+    snapshot = dashboard_snapshot(paths)
+    ctx = {
+        **_base_context(paths, snapshot),
+        "page_title": page_title,
+        "page_description": page_description,
+        "sections": sections,
+    }
+    return _env.get_template("detail.html").render(**ctx)
+
+
+def build_etl_detail(paths: RiftPaths) -> str:
+    etl_runs = list_etl_runs(paths.warehouse_db, limit=50)
+    return build_detail_html(
+        paths, "ETL Pipeline Runs",
+        "Auditable bronze/silver/gold ETL pipeline executions with data quality tracking.",
+        [{"title": "All ETL Runs",
+          "columns": ["run_id", "source_system", "dataset_name", "rows_valid", "rows_invalid", "duplicates_removed"],
+          "rows": etl_runs,
+          "empty_state": asdict(EMPTY_STATES["etl"]) if not etl_runs else None}],
+    )
+
+
+def build_governance_detail(paths: RiftPaths) -> str:
+    fairness = list_fairness_audits(paths, limit=50)
+    drift = list_drift_reports(paths, limit=50)
+    return build_detail_html(
+        paths, "Governance & Compliance",
+        "Fairness audits, drift monitoring reports, and model card generation status.",
+        [
+            {"title": "Fairness Audits",
+             "columns": ["audit_id", "sensitive_column", "demographic_parity_difference", "disparate_impact_ratio", "report_path"],
+             "rows": fairness,
+             "empty_state": asdict(EMPTY_STATES["fairness"]) if not fairness else None},
+            {"title": "Drift Reports",
+             "columns": ["report_id", "drift_score", "is_drift", "retrain_triggered", "report_path"],
+             "rows": drift,
+             "empty_state": asdict(EMPTY_STATES["drift"]) if not drift else None},
+        ],
+    )
+
+
+def build_audits_detail(paths: RiftPaths) -> str:
+    audits = _recent_audits(paths, limit=50)
+    return build_detail_html(
+        paths, "Audit Decision Records",
+        "SHA-256 hashed, replayable decision records stored in DuckDB.",
+        [{"title": "All Recorded Decisions",
+          "columns": ["decision_id", "model_run_id", "decision", "calibrated_probability", "confidence"],
+          "rows": audits,
+          "empty_state": asdict(EMPTY_STATES["audits"]) if not audits else None}],
+    )
+
+
+def build_models_detail(paths: RiftPaths) -> str:
+    current_run = _safe_read_json(paths.runs_dir / "current_run.json")
+    current_metrics = None
+    if current_run:
+        current_metrics = _safe_read_json(paths.runs_dir / current_run["run_id"] / "metrics.json")
+
+    model_rows = []
+    if current_run and current_metrics:
+        m = current_metrics.get("metrics", {})
+        model_rows.append({
+            "run_id": current_run["run_id"],
+            "model_type": current_metrics.get("model_type", ""),
+            "pr_auc": f"{m.get('pr_auc', 0):.4f}",
+            "ece": f"{m.get('ece', 0):.4f}",
+            "brier_score": f"{m.get('brier_score', 0):.4f}",
+            "optimization": current_metrics.get("optimization", {}).get("mode", "default"),
+        })
+
+    federated = list_federated_runs(paths, limit=20)
+    return build_detail_html(
+        paths, "Model Runs & Performance",
+        "Training runs, model metrics, optimization modes, and federated scaffolds.",
+        [
+            {"title": "Current Model",
+             "columns": ["run_id", "model_type", "pr_auc", "ece", "brier_score", "optimization"],
+             "rows": model_rows,
+             "empty_state": asdict(EMPTY_STATES["models"]) if not model_rows else None},
+            {"title": "Federated Training Runs",
+             "columns": ["run_id", "client_column", "client_count", "rounds"],
+             "rows": federated,
+             "empty_state": asdict(EMPTY_STATES["federated"]) if not federated else None},
+        ],
+    )
+
+
+def get_static_dir() -> Path:
+    return _STATIC_DIR

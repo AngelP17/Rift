@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Rift Operations Dashboard{% endblock %}
+{% block content %}
+{% include "partials/quick_links.html" %}
+
+<section class="hero">
+  <h1>Platform Health Overview</h1>
+  <p>Auditable fraud detection with GraphSAGE + XGBoost hybrid modeling, calibrated probabilities, conformal uncertainty triage, deterministic replay, governance model cards, drift monitoring, fairness audits, and plain-English audit reports. All open-source, zero-cost, fully local.</p>
+</section>
+
+{% include "partials/kpi_cards.html" %}
+
+<section class="grid">
+  <div class="two-up">
+    {% with title="Latest ETL Runs", columns=["run_id","source_system","rows_valid","rows_invalid","duplicates_removed"], rows=etl_runs, empty_state=empty_states.get("etl") %}
+      {% include "partials/data_table.html" %}
+    {% endwith %}
+  </div>
+  <div class="two-up">
+    {% with title="Recent Fairness Audits", columns=["audit_id","sensitive_column","demographic_parity_difference","disparate_impact_ratio"], rows=fairness_audits, empty_state=empty_states.get("fairness") %}
+      {% include "partials/data_table.html" %}
+    {% endwith %}
+  </div>
+  <div class="two-up">
+    {% with title="Recent Drift Reports", columns=["report_id","drift_score","is_drift","retrain_triggered"], rows=drift_reports, empty_state=empty_states.get("drift") %}
+      {% include "partials/data_table.html" %}
+    {% endwith %}
+  </div>
+  <div class="two-up">
+    {% with title="Federated Training Runs", columns=["run_id","client_column","client_count","rounds"], rows=federated_runs, empty_state=empty_states.get("federated") %}
+      {% include "partials/data_table.html" %}
+    {% endwith %}
+  </div>
+  <div class="two-up">
+    {% with title="Prepared Public Datasets", columns=["dataset_id","adapter","rows_prepared","auto_etl_run_id"], rows=prepared_datasets, empty_state=empty_states.get("datasets") %}
+      {% include "partials/data_table.html" %}
+    {% endwith %}
+  </div>
+  <div class="full">
+    {% with title="Recent Audit Decisions", columns=["decision_id","model_run_id","decision","calibrated_probability","confidence"], rows=recent_audits, empty_state=empty_states.get("audits") %}
+      {% include "partials/data_table.html" %}
+    {% endwith %}
+  </div>
+  <div class="full panel">
+    <h2>System Status</h2>
+    <p class="note">Storage backend: <strong>{{ storage_status.get("backend", "unknown") }}</strong>. {{ storage_status.get("details", "") }}</p>
+    <p class="note">This dashboard reads from local Parquet, DuckDB, and JSON artifacts under <code>.rift/</code>. No paid SaaS, proprietary cloud, or closed-source dependency is required.</p>
+  </div>
+</section>
+{% endblock %}

@@ -1,11 +1,20 @@
-# Rift
-
-**Graph ML for fraud detection, replay, and audit**
+# Rift: Auditable Graph-Based Fraud Intelligence Platform
 
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-81%20passing-brightgreen)]()
 
-Rift is an auditable fraud detection system that combines graph-aware fraud scoring, calibrated probabilities, conformal uncertainty, deterministic replay, plain-English audit reports, and zero-cost local governance tooling.
+Rift is a **full, open-source, zero-cost, local-first ML platform** for fraud detection with:
+
+- **GraphSAGE + XGBoost hybrid modeling** with temporal robustness
+- **Deterministic replay and audit trails** (SHA-256 + DuckDB)
+- **Governance** (model cards, drift monitoring, fairness audits)
+- **Sector extensibility** (YAML profiles with privacy masking)
+- **Green optimization** and legacy reengineering
+- **Natural-language audit queries** (Ollama + deterministic SQL fallback)
+- **Operations Dashboard** at `localhost:8000/dashboard` for at-a-glance governance, lineage, and model health
+
+The real power is in the backend pipeline and compliance features -- the dashboard is the professional interface that makes it usable and demo-ready.
 
 ```mermaid
 flowchart LR

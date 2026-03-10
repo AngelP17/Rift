@@ -1,0 +1,9 @@
+<section class="cards">
+{% for card in kpi_cards %}
+  <div class="card">
+    <div class="label">{{ card.label }}</div>
+    <div class="value" style="color:{{ card.color_var }}">{{ card.value }}</div>
+    <div class="help">{{ card.help_text }}</div>
+  </div>
+{% endfor %}
+</section>
