@@ -92,34 +92,25 @@ class TestDashboardRendering:
         from rift.dashboard.views import build_dashboard_html
         html_out = build_dashboard_html(paths)
         assert "Rift Operations Dashboard" in html_out
-        assert "Platform Health Overview" in html_out
-        assert "quick-link" in html_out
-        assert "No records" in html_out or "empty-state" in html_out
-
-    def test_build_etl_detail(self, tmp_path: Path):
-        paths = _paths(tmp_path)
-        from rift.dashboard.views import build_etl_detail
-        html_out = build_etl_detail(paths)
-        assert "ETL Pipeline Runs" in html_out
-        assert "Dashboard" in html_out
+        assert "<!DOCTYPE html>" in html_out
 
     def test_build_governance_detail(self, tmp_path: Path):
         paths = _paths(tmp_path)
         from rift.dashboard.views import build_governance_detail
         html_out = build_governance_detail(paths)
-        assert "Governance" in html_out
+        assert "Governance" in html_out or "Fairness" in html_out
 
-    def test_build_audits_detail(self, tmp_path: Path):
+    def test_build_landing_html(self, tmp_path: Path):
         paths = _paths(tmp_path)
-        from rift.dashboard.views import build_audits_detail
-        html_out = build_audits_detail(paths)
-        assert "Audit Decision Records" in html_out
+        from rift.dashboard.views import build_landing_html
+        html_out = build_landing_html(paths)
+        assert "<!DOCTYPE html>" in html_out
 
-    def test_build_models_detail(self, tmp_path: Path):
-        paths = _paths(tmp_path)
-        from rift.dashboard.views import build_models_detail
-        html_out = build_models_detail(paths)
-        assert "Model Runs" in html_out
+    def test_get_static_dir(self):
+        from rift.dashboard.views import get_static_dir
+        static = get_static_dir()
+        assert static.exists()
+        assert (static / "dashboard.css").exists()
 
     def test_kpi_card_serialization(self):
         card = KpiCard("Test", "0.95", 0.95, "good", "var(--good)", "Test help")

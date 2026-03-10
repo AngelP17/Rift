@@ -6,17 +6,17 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from rift.lakehouse.sql import build_default_views, query_lakehouse
 from rift.data.schemas import PredictionRequest
-from rift.dashboard.views import build_dashboard_html, build_landing_html, dashboard_snapshot
+from rift.dashboard.views import build_dashboard_html, build_landing_html, dashboard_snapshot, get_static_dir
 from rift.datasets.adapters import list_prepared_datasets
 from rift.etl.pipeline import list_etl_runs
 from rift.explain.report import build_audit_report, build_explanation, report_to_markdown
 from rift.federated.simulation import list_federated_runs
 from rift.governance.fairness import list_fairness_audits
 from rift.governance.model_cards import generate_model_card
-from rift.lakehouse.sql import build_default_views, query_lakehouse
 from rift.models.infer import load_run, payload_to_frame, score_frame
 from rift.monitoring.drift import list_drift_reports
 from rift.monitoring.nl_query import answer_natural_language_query
