@@ -4,6 +4,14 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-81%20passing-brightgreen)]()
 
+## Screenshots
+
+![Landing Page](docs/screenshots/landing_page.png)
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+## Overview
+
 Rift is a **full, open-source, zero-cost, local-first ML platform** for fraud detection with:
 
 - **GraphSAGE + XGBoost hybrid modeling** with temporal robustness
