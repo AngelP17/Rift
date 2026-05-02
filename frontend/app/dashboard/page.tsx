@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
 import { motion } from "framer-motion";
-import { ArrowsClockwise, Database, GitBranch, Pulse, ShieldWarning, Table } from "@phosphor-icons/react";
+import { ArrowsClockwise, Database, GitBranch, Graph, LockKey, Pulse, ShieldWarning, Table } from "@phosphor-icons/react";
 import { DataTable } from "@/components/dashboard/data-table";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { OperationsBreakdownChart } from "@/components/dashboard/operations-breakdown-chart";
@@ -182,39 +183,62 @@ export default function DashboardPage() {
   return (
     <main className="min-h-[100dvh] px-4 py-5 text-ink md:px-6 xl:px-8">
       <div className="mx-auto max-w-[1480px]">
+        <nav className="mb-5 rounded-full border border-white/10 bg-slate-950/72 px-4 py-3 shadow-glass backdrop-blur-2xl">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <Link className="flex items-center gap-3 text-sm font-semibold tracking-tight" href="/">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-slate-950">
+                <GitBranch size={18} weight="bold" />
+              </span>
+              <span>
+                Rift
+                <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.28em] text-muted">Evidence console</span>
+              </span>
+            </Link>
+            <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-muted">
+              <span className="rounded-full border border-white/10 px-3 py-1">Graph atlas</span>
+              <span className="rounded-full border border-white/10 px-3 py-1">Decision replay</span>
+              <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-emerald-200">Hash locked</span>
+            </div>
+          </div>
+        </nav>
+
         {isDemoData ? (
           <div className="mb-4 rounded-full border border-amber-300/25 bg-amber-300/10 px-5 py-3 text-sm text-amber-100">
             API unavailable in this session, so the console is showing realistic local demo telemetry for visual QA.
           </div>
         ) : null}
         <motion.header
-          className="surface mb-6 rounded-[36px] border border-[color:var(--color-line)] px-6 py-6 md:px-8 md:py-7"
+          className="glass-edge relative mb-6 overflow-hidden rounded-[36px] border border-[color:var(--color-line)] bg-slate-950/72 px-6 py-6 md:px-8 md:py-7"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
-          style={{ backgroundImage: "var(--gradient-hero)" }}
         >
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="max-w-3xl">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[color:var(--color-line)] bg-white/[0.03] px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-muted">
-                <GitBranch className="h-4 w-4 text-accent" />
-                React operations console
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_10%,rgba(110,168,254,0.22),transparent_32%),linear-gradient(135deg,rgba(15,23,42,0.72),rgba(2,6,23,0.92))]" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(110,168,254,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(110,168,254,0.05)_1px,transparent_1px)] bg-[size:72px_72px] opacity-40" />
+          <div className="relative grid gap-7 xl:grid-cols-[minmax(0,1fr)_430px] xl:items-end">
+            <div className="max-w-4xl">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[color:var(--color-line)] bg-white/[0.04] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
+                <Graph className="h-4 w-4 text-accent" />
+                Live fraud graph evidence desk
               </div>
               <h1 className="font-display text-[clamp(2.6rem,5vw,4.75rem)] leading-[0.94] tracking-[-0.06em]">
-                Real-time fraud operations, rebuilt as a product surface.
+                Evidence console for the fraud graph.
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-8 text-muted md:text-lg">
-                Next.js, SWR, Recharts, Framer Motion, and TanStack Table now sit on top of the existing FastAPI endpoints so the dashboard behaves like a modern SPA instead of a static admin page.
+                Review graph risk, calibration drift, replayable decisions, and data lineage from the same local snapshot. The console uses realistic demo telemetry when the API is offline so the investigation surface never looks empty.
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[360px]">
-              <div className="rounded-[24px] border border-[color:var(--color-line)] bg-slate-950/55 p-4">
-                <div className="text-[11px] uppercase tracking-[0.22em] text-muted">Current Run</div>
-                <div className="mt-3 font-mono text-base text-ink">{summary?.current_model?.run_id ?? "No active run"}</div>
+            <div className="grid gap-3">
+              <div className="rounded-[28px] border border-white/10 bg-slate-950/60 p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">Current evidence chain</div>
+                  <LockKey className="h-4 w-4 text-emerald-300" weight="duotone" />
+                </div>
+                <div className="mt-3 break-all font-mono text-base text-ink">{summary?.current_model?.run_id ?? "No active run"}</div>
                 <div className="mt-2 text-sm text-muted">{summary?.current_metrics?.model_type ?? "No model metadata"}</div>
               </div>
-              <div className="rounded-[24px] border border-[color:var(--color-line)] bg-slate-950/55 p-4">
+              <div className="rounded-[28px] border border-white/10 bg-slate-950/60 p-5">
                 <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.22em] text-muted">
                   <span>Live Refresh</span>
                   <span

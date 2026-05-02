@@ -21,36 +21,36 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 const bentoCards = [
   {
-    title: "Graph fraud signals",
-    body: "Shared devices, account reuse, merchant clusters, and temporal links stay visible instead of disappearing into flat tables.",
+    title: "Device farms become neighborhoods",
+    body: "Shared devices, account reuse, merchant clusters, and temporal links stay visible as connected evidence instead of disappearing into flat tables.",
     className: "md:col-span-5",
     image: "https://picsum.photos/seed/rift-graph-topology/1200/800",
     icon: Graph
   },
   {
-    title: "Replayable decisions",
-    body: "Every score can be traced back to feature inputs, calibrated probabilities, model run metadata, and a durable decision hash.",
+    title: "Every score leaves a receipt",
+    body: "Feature inputs, calibrated probabilities, model run metadata, and durable hashes travel together through the review path.",
     className: "md:col-span-4",
     image: "https://picsum.photos/seed/rift-audit-ledger/1200/800",
     icon: LockKey
   },
   {
-    title: "Operational triage",
-    body: "Conformal bands separate low-risk approvals from cases that deserve human review.",
+    title: "Uncertainty gets routed",
+    body: "Conformal bands separate low-risk approvals from cases that deserve a human analyst before money moves.",
     className: "md:col-span-3",
     image: "https://picsum.photos/seed/rift-analyst-desk/1200/800",
     icon: WarningDiamond
   },
   {
-    title: "Governance artifacts",
+    title: "Governance is not a PDF afterthought",
     body: "Model cards, fairness audits, drift reports, and markdown exports are generated from the same local evidence store.",
     className: "md:col-span-7",
     image: "https://picsum.photos/seed/rift-governance-review/1400/900",
     icon: ShieldCheck
   },
   {
-    title: "Local-first stack",
-    body: "DuckDB, Polars, FastAPI, and Next.js run without managed services, while still feeling like a polished control room.",
+    title: "Local stack, serious posture",
+    body: "DuckDB, Polars, FastAPI, and Next.js run without managed services, while still feeling like an investigation-grade console.",
     className: "md:col-span-5",
     image: "https://picsum.photos/seed/rift-local-control-room/1200/900",
     icon: Database
@@ -153,13 +153,18 @@ export function LandingExperience() {
 
   return (
     <main ref={root} className="w-full max-w-full overflow-x-hidden bg-[#030712] text-ink">
-      <nav className="fixed left-1/2 top-5 z-20 w-[min(94vw,980px)] -translate-x-1/2 rounded-full border border-white/10 bg-slate-950/70 px-4 py-3 shadow-glass backdrop-blur-2xl">
+      <nav className="fixed left-1/2 top-5 z-20 w-[min(94vw,1080px)] -translate-x-1/2 rounded-full border border-white/10 bg-slate-950/76 px-4 py-3 shadow-glass backdrop-blur-2xl">
         <div className="flex items-center justify-between gap-4">
           <Link className="flex items-center gap-3 text-sm font-semibold tracking-tight" href="/">
             <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-slate-950">
               <GitBranch size={18} weight="bold" />
             </span>
-            Rift
+            <span>
+              Rift
+              <span className="ml-2 hidden font-mono text-[10px] uppercase tracking-[0.28em] text-muted sm:inline">
+                Evidence OS
+              </span>
+            </span>
           </Link>
           <div className="hidden items-center gap-6 text-sm text-muted md:flex">
             <a className="transition hover:text-ink" href="#intelligence">
@@ -176,77 +181,138 @@ export function LandingExperience() {
             className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:scale-[1.02] active:scale-[0.98]"
             href="/dashboard"
           >
-            Open console
+            Open evidence console
           </Link>
         </div>
       </nav>
 
       <section className="relative min-h-[100dvh] px-4 pb-24 pt-36 md:px-8 md:pb-32 md:pt-44">
         <div className="absolute inset-0 -z-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(110,168,254,0.24),transparent_32%),radial-gradient(circle_at_80%_8%,rgba(47,191,113,0.15),transparent_28%)]" />
-          <div
-            aria-hidden="true"
-            className="absolute bottom-0 right-0 h-[72%] w-[72%] rounded-tl-[5rem] bg-cover bg-center opacity-35 mix-blend-luminosity grayscale contrast-125"
-            style={{ backgroundImage: "url(https://picsum.photos/seed/rift-risk-operations/1920/1080)" }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/20 via-slate-950/78 to-[#030712]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(110,168,254,0.22),transparent_30%),radial-gradient(circle_at_86%_12%,rgba(47,191,113,0.14),transparent_26%),linear-gradient(135deg,rgba(8,13,27,0.94),rgba(3,7,18,0.98))]" />
+          <div className="absolute inset-x-0 top-28 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <div className="absolute left-[8vw] top-36 hidden h-[62vh] w-px bg-gradient-to-b from-transparent via-white/15 to-transparent lg:block" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(110,168,254,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(110,168,254,0.06)_1px,transparent_1px)] bg-[size:96px_96px] opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#030712]/68 to-[#030712]" />
         </div>
 
         <div className="relative mx-auto max-w-[1400px]">
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.72fr)] lg:items-end">
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,1.02fr)_minmax(430px,0.98fr)] lg:items-end">
             <div className="min-w-0 max-w-6xl">
-              <p data-hero-copy className="mb-7 max-w-2xl text-sm uppercase tracking-[0.34em] text-muted">
-                Auditable graph intelligence for fraud teams
+              <p data-hero-copy className="mb-7 max-w-2xl font-mono text-xs uppercase tracking-[0.38em] text-muted">
+                Fraud graph atlas / replay desk / local evidence store
               </p>
               <h1
                 data-hero-copy
                 className="max-w-6xl font-display text-[clamp(3rem,5vw,5.5rem)] font-semibold leading-[0.92] tracking-[-0.07em]"
               >
-                Investigate fraud with graph context{" "}
+                Follow the fraud graph until the evidence holds{" "}
                 <span
                   className="mx-2 inline-block h-10 w-28 rounded-full bg-cover bg-center align-middle grayscale contrast-125 md:h-12 md:w-36"
-                  style={{ backgroundImage: "url(https://picsum.photos/seed/rift-inline-ledger/600/300)" }}
+                  style={{ backgroundImage: "url(https://picsum.photos/seed/rift-inline-forensic-map/600/300)" }}
                 />{" "}
-                and replayable proof.
+                in replay.
               </h1>
               <p data-hero-copy className="mt-7 max-w-3xl text-lg leading-8 text-muted md:text-xl">
-                Rift combines synthetic fraud generation, graph-aware models, calibration, conformal triage, and immutable audit records in a local-first platform that demos like a serious product.
+                Rift is a local-first fraud lab where graph signals, calibrated uncertainty, and audit receipts converge into one reviewer-grade surface.
               </p>
               <div data-hero-copy className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   className="group inline-flex items-center justify-center gap-3 rounded-full bg-white px-7 py-4 text-sm font-semibold text-slate-950 transition hover:scale-[1.02] active:scale-[0.98]"
                   href="/dashboard"
                 >
-                  Open dashboard
+                  Open evidence console
                   <ArrowRight className="transition group-hover:translate-x-1" size={18} weight="bold" />
                 </Link>
                 <a
                   className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/[0.08] px-7 py-4 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition hover:border-white/45 hover:bg-white/[0.12] active:scale-[0.98]"
                   href="#intelligence"
                 >
-                  See the system
+                  Inspect the atlas
                 </a>
               </div>
             </div>
 
-            <aside data-hero-copy className="glass-edge rounded-[2.5rem] bg-slate-950/64 p-5 backdrop-blur-2xl">
-              <div className="overflow-hidden rounded-[2rem]">
-                <div
-                  aria-label="Fraud investigation console with network evidence"
-                  className="h-72 w-full bg-cover bg-center grayscale transition-transform duration-700 ease-out hover:scale-105"
-                  role="img"
-                  style={{ backgroundImage: "url(https://picsum.photos/seed/rift-analyst-console/900/900)" }}
-                />
+            <aside data-hero-copy className="glass-edge relative overflow-hidden rounded-[2.5rem] bg-slate-950/70 p-5 backdrop-blur-2xl">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_15%,rgba(110,168,254,0.2),transparent_30%)]" />
+              <div className="relative rounded-[2rem] border border-white/10 bg-slate-950/88 p-5">
+                <div className="mb-6 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-muted">Case graph</p>
+                    <h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.05em]">DEC_84AF31</h2>
+                  </div>
+                  <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-emerald-200">
+                    hash locked
+                  </div>
+                </div>
+
+                <div className="relative h-[360px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-[radial-gradient(circle_at_50%_42%,rgba(110,168,254,0.15),transparent_34%),linear-gradient(135deg,rgba(15,23,42,0.9),rgba(2,6,23,0.96))]">
+                  <svg className="absolute inset-0 h-full w-full" role="img" viewBox="0 0 640 420">
+                    <title>Fraud graph evidence map</title>
+                    <defs>
+                      <linearGradient id="edge-gradient" x1="0" x2="1" y1="0" y2="1">
+                        <stop offset="0%" stopColor="#6ea8fe" stopOpacity="0.7" />
+                        <stop offset="100%" stopColor="#2fbf71" stopOpacity="0.28" />
+                      </linearGradient>
+                    </defs>
+                    {[
+                      [118, 112, 298, 186],
+                      [298, 186, 470, 96],
+                      [298, 186, 506, 278],
+                      [118, 112, 190, 312],
+                      [190, 312, 506, 278],
+                      [298, 186, 190, 312],
+                      [470, 96, 506, 278]
+                    ].map(([x1, y1, x2, y2], index) => (
+                      <line
+                        key={`${x1}-${y1}-${index}`}
+                        stroke="url(#edge-gradient)"
+                        strokeDasharray={index % 2 ? "6 10" : undefined}
+                        strokeWidth="1.4"
+                        x1={x1}
+                        x2={x2}
+                        y1={y1}
+                        y2={y2}
+                      />
+                    ))}
+                    {[
+                      [118, 112, "device"],
+                      [298, 186, "txn"],
+                      [470, 96, "merchant"],
+                      [506, 278, "account"],
+                      [190, 312, "user"]
+                    ].map(([x, y, label]) => (
+                      <g key={label}>
+                        <circle cx={x as number} cy={y as number} fill="rgba(255,255,255,0.08)" r="34" stroke="rgba(255,255,255,0.16)" />
+                        <circle cx={x as number} cy={y as number} fill={label === "txn" ? "#ffffff" : "#6ea8fe"} r={label === "txn" ? "8" : "6"} />
+                        <text fill="rgba(243,246,255,0.72)" fontFamily="JetBrains Mono" fontSize="11" x={(x as number) - 24} y={(y as number) + 52}>
+                          {String(label).toUpperCase()}
+                        </text>
+                      </g>
+                    ))}
+                  </svg>
+                  <div className="absolute bottom-4 left-4 right-4 grid gap-3 sm:grid-cols-3">
+                    {[
+                      ["risk", "0.782"],
+                      ["band", "review"],
+                      ["trail", "6 hops"]
+                    ].map(([label, value]) => (
+                      <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-3" key={label}>
+                        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted">{label}</p>
+                        <p className="mt-2 font-mono text-lg font-semibold">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="relative mt-5 grid grid-cols-2 gap-3">
                 {[
                   ["PR-AUC", "91.2%"],
                   ["ECE", "0.031"],
-                  ["Review rate", "6.8%"],
+                  ["Reviewer load", "6.8%"],
                   ["Audit rows", "18,472"]
                 ].map(([label, value]) => (
                   <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-4" key={label}>
-                    <p className="text-xs text-muted">{label}</p>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted">{label}</p>
                     <p className="mt-2 font-mono text-2xl font-semibold">{value}</p>
                   </div>
                 ))}
