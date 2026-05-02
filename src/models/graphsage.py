@@ -37,11 +37,11 @@ class GraphSAGEEncoder(nn.Module):
         num_nodes = x.size(0)
         src, dst = edge_index[0], edge_index[1]
 
-        neigh_sum = torch.zeros(num_nodes, x.size(1), device=x.device)
-        neigh_count = torch.zeros(num_nodes, 1, device=x.device)
-        neigh_sum.index_add_(0, dst, x[src])
-        ones = torch.ones(src.size(0), 1, device=x.device)
-        neigh_count.index_add_(0, dst, ones)
+        neigh_sum = torch.zeros(num_nodes, x.size(1), dtype=x.dtype, device=x.device)
+        neigh_count = torch.zeros(num_nodes, 1, dtype=x.dtype, device=x.device)
+        for source, target in zip(src.tolist(), dst.tolist(), strict=False):
+            neigh_sum[target].add_(x[source])
+            neigh_count[target, 0] += 1
         neigh_mean = neigh_sum / neigh_count.clamp(min=1)
 
         out = lin_self(x) + lin_neigh(neigh_mean)

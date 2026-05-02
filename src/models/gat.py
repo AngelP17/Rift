@@ -27,17 +27,30 @@ class GATLayer(nn.Module):
         Wh = self.W(x)
         src, dst = edge_index[0], edge_index[1]
 
-        edge_h = torch.cat([Wh[src], Wh[dst]], dim=-1)
+        edge_pairs = list(zip(src.tolist(), dst.tolist(), strict=False))
+        if not edge_pairs:
+            return torch.zeros_like(Wh)
+
+        edge_h = torch.stack(
+            [torch.cat((Wh[source], Wh[target]), dim=0) for source, target in edge_pairs],
+            dim=0,
+        )
         e = self.leaky_relu(self.attn(edge_h)).squeeze(-1)
 
-        torch.zeros(x.size(0), dtype=e.dtype, device=e.device)
         e_exp = torch.exp(e - e.max())
-        alpha_sum = torch.zeros(x.size(0), device=x.device)
-        alpha_sum.index_add_(0, dst, e_exp)
-        alpha_norm = e_exp / alpha_sum[dst].clamp(min=1e-10)
+        alpha_sum = torch.zeros(x.size(0), dtype=e_exp.dtype, device=x.device)
+        for (_, target), weight in zip(edge_pairs, e_exp, strict=False):
+            alpha_sum[target].add_(weight)
+        alpha_norm = torch.stack(
+            [
+                weight / alpha_sum[target].clamp(min=1e-10)
+                for (_, target), weight in zip(edge_pairs, e_exp, strict=False)
+            ]
+        )
 
         out = torch.zeros_like(Wh)
-        out.index_add_(0, dst, alpha_norm.unsqueeze(-1) * Wh[src])
+        for (source, target), weight in zip(edge_pairs, alpha_norm, strict=False):
+            out[target].add_(weight * Wh[source])
         return out
 
 
