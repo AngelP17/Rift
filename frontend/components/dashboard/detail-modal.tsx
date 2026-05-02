@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X } from "@phosphor-icons/react";
 
 type DetailModalProps = {
   title: string;
@@ -40,7 +40,7 @@ export function DetailModal({ title, open, onClose, payload }: DetailModalProps)
                 onClick={onClose}
                 type="button"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4" weight="bold" />
               </button>
             </div>
             <pre className="thin-scrollbar max-h-[60vh] overflow-auto rounded-[24px] bg-slate-950/80 p-5 font-mono text-xs leading-6 text-slate-100">

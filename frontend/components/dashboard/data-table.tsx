@@ -10,7 +10,7 @@ import {
   SortingState,
   useReactTable
 } from "@tanstack/react-table";
-import { ArrowUpDown, Search } from "lucide-react";
+import { ArrowsDownUp, MagnifyingGlass } from "@phosphor-icons/react";
 import { DetailModal } from "@/components/dashboard/detail-modal";
 import { cn, titleCase } from "@/lib/utils";
 
@@ -65,7 +65,7 @@ export function DataTable<TData extends Record<string, unknown>>({
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <label className="relative block min-w-[220px]">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
               <input
                 className="w-full rounded-full border border-[color:var(--color-line)] bg-slate-950/55 py-2.5 pl-10 pr-4 text-sm text-ink outline-none transition focus:border-[color:var(--color-line-strong)]"
                 onChange={(event) => setSearch(event.target.value)}
@@ -99,7 +99,7 @@ export function DataTable<TData extends Record<string, unknown>>({
                           type="button"
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {header.column.getCanSort() ? <ArrowUpDown className="h-3.5 w-3.5" /> : null}
+                          {header.column.getCanSort() ? <ArrowsDownUp className="h-3.5 w-3.5" /> : null}
                         </button>
                       )}
                     </th>

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { motion } from "framer-motion";
-import { Activity, DatabaseZap, RefreshCcw, ShieldAlert, Table2, Workflow } from "lucide-react";
+import { ArrowsClockwise, Database, GitBranch, Pulse, ShieldWarning, Table } from "@phosphor-icons/react";
 import { DataTable } from "@/components/dashboard/data-table";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { OperationsBreakdownChart } from "@/components/dashboard/operations-breakdown-chart";
@@ -105,6 +105,7 @@ export default function DashboardPage() {
 
   const summary = summaryQuery.data;
   const metrics = metricsQuery.data?.metrics ?? summary?.current_metrics?.metrics;
+  const isDemoData = Boolean(summaryQuery.error || metricsQuery.error);
   const coverage = 1 - Number(metrics?.review_rate ?? 0);
   const tables = useTables(summary);
 
@@ -179,8 +180,13 @@ export default function DashboardPage() {
   ];
 
   return (
-    <main className="min-h-screen px-4 py-5 text-ink md:px-6 xl:px-8">
+    <main className="min-h-[100dvh] px-4 py-5 text-ink md:px-6 xl:px-8">
       <div className="mx-auto max-w-[1480px]">
+        {isDemoData ? (
+          <div className="mb-4 rounded-full border border-amber-300/25 bg-amber-300/10 px-5 py-3 text-sm text-amber-100">
+            API unavailable in this session, so the console is showing realistic local demo telemetry for visual QA.
+          </div>
+        ) : null}
         <motion.header
           className="surface mb-6 rounded-[36px] border border-[color:var(--color-line)] px-6 py-6 md:px-8 md:py-7"
           initial={{ opacity: 0, y: 24 }}
@@ -191,8 +197,8 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[color:var(--color-line)] bg-white/[0.03] px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-muted">
-                <Workflow className="h-4 w-4 text-accent" />
-                React Operations Console
+                <GitBranch className="h-4 w-4 text-accent" />
+                React operations console
               </div>
               <h1 className="font-display text-[clamp(2.6rem,5vw,4.75rem)] leading-[0.94] tracking-[-0.06em]">
                 Real-time fraud operations, rebuilt as a product surface.
@@ -219,7 +225,7 @@ export default function DashboardPage() {
                         : "bg-emerald-400/10 text-emerald-300"
                     )}
                   >
-                    <RefreshCcw className={cn("h-3 w-3", summaryQuery.isValidating || metricsQuery.isValidating ? "animate-spin" : "")} />
+                    <ArrowsClockwise className={cn("h-3 w-3", summaryQuery.isValidating || metricsQuery.isValidating ? "animate-spin" : "")} />
                     {summaryQuery.isValidating || metricsQuery.isValidating ? "Updating" : "Live"}
                   </span>
                 </div>
@@ -251,22 +257,22 @@ export default function DashboardPage() {
         >
           {[
             {
-              icon: ShieldAlert,
+              icon: ShieldWarning,
               title: "Audit drill-downs",
               body: "Every row opens a modal with the full JSON payload from the summary snapshot."
             },
             {
-              icon: Table2,
+              icon: Table,
               title: "Searchable tables",
               body: "Global filtering and sorting are powered by TanStack Table across all six operational views."
             },
             {
-              icon: Activity,
+              icon: Pulse,
               title: "Smooth motion system",
               body: "Framer Motion handles card reveals, hover states, and modal transitions with the same easing system as the new landing page."
             },
             {
-              icon: DatabaseZap,
+              icon: Database,
               title: "Same source of truth",
               body: "The SPA consumes the existing FastAPI endpoints rather than inventing a second backend."
             }

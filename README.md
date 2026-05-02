@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-81%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-97%20passing-brightgreen)]()
 
 ## Screenshots
 
@@ -20,7 +20,7 @@ Rift is a **full, open-source, zero-cost, local-first ML platform** for fraud de
 - **Sector extensibility** (YAML profiles with privacy masking)
 - **Green optimization** and legacy reengineering
 - **Natural-language audit queries** (Ollama + deterministic SQL fallback)
-- **Operations Dashboard** at `localhost:8000/dashboard` for at-a-glance governance, lineage, and model health
+- **Operations Dashboard** at `localhost:8000/dashboard` or the Next.js frontend at `localhost:3000/dashboard` for at-a-glance governance, lineage, and model health
 
 The real power is in the backend pipeline and compliance features -- the dashboard is the professional interface that makes it usable and demo-ready.
 
@@ -128,6 +128,16 @@ Launch the built-in dashboard:
 ```bash
 rift dashboard --host 127.0.0.1 --port 8000
 ```
+
+Launch the premium Next.js frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Then visit `http://localhost:3000` for the landing page or `http://localhost:3000/dashboard` for the React operations console. If the FastAPI backend is not running, the console uses realistic local demo telemetry so visual QA and screenshots still represent a populated system.
 
 Run the local orchestration and lakehouse workflow:
 
