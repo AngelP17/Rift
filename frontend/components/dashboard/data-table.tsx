@@ -73,7 +73,7 @@ export function DataTable<TData extends Record<string, unknown>>({
                 value={search}
               />
             </label>
-            <div className="rounded-full border border-[color:var(--color-line)] px-4 py-2 text-xs uppercase tracking-[0.2em] text-muted">
+            <div className="text-sm text-muted">
               {rowCountLabel}
             </div>
           </div>

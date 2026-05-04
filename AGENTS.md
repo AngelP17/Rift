@@ -130,6 +130,19 @@ For future visual frontend changes, apply these hard QA gates before considering
 - Clickable cards and image modules should have visible hover motion inside stable, overflow-hidden frames.
 - If adding GSAP, use real `@gsap/react`/`ScrollTrigger` behavior and verify reduced-motion handling remains acceptable.
 
+Cheap/meta UI patterns to remove or avoid:
+
+- Decorative labels like `SECTION 01`, `QUESTION 05`, `Evidence OS`, `Graph atlas`, `Hash locked`, or fake runtime/control-room tags.
+- Pills, badges, or chips that only make the screen look busy. Use plain text, an icon, or a real control instead.
+- Marketing filler such as `next-gen`, `seamless`, `transformative`, `revolutionize`, `unleash`, or invented brand names.
+- Unsupported badges in docs, especially test/pass-count badges that do not link to a current CI result.
+
+Allowed operational labels:
+
+- Real product terms such as `status`, `metadata`, `lineage`, `model card`, `drift`, `fairness`, `replay`, and `audit`.
+- Compact labels inside tables, charts, and KPI cards when they directly identify data.
+- State indicators such as `Live`, `Updating`, or `API unavailable` when they reflect actual app state.
+
 ## Conventions and Constraints
 
 - Do not change application behavior during documentation-only tasks.
@@ -138,6 +151,7 @@ For future visual frontend changes, apply these hard QA gates before considering
 - Keep optional integrations optional; do not make paid cloud services required for core workflows.
 - Update docs when CLI commands, API routes, generated artifacts, audit output, dashboard behavior, or workflow steps change.
 - Use Mermaid for diagrams in Markdown; do not add ASCII art diagrams.
+- Keep Mermaid diagrams concise: use subgraphs for major domains, quote labels with punctuation, avoid decorative nodes, and prefer the shared Rift palette (`#0f172a`, `#10243f`, `#12351f`, `#3a1f12`) when styling.
 - Use `python3 -m rift.cli.main ...` in scripts when matching existing scripts; user-facing docs may use the installed `rift` command after editable install.
 - Treat `.rift/`, `frontend/.next/`, `frontend/node_modules/`, `.pytest_cache/`, Docker volumes, logs, and generated screenshots/artifacts as generated output. Do not hand-edit them.
 - Avoid committing secrets or local service credentials. Docker Compose contains local demo credentials only.

@@ -9,7 +9,7 @@ The Rift Operations Dashboard is the governance-focused UI layer that surfaces p
 | Server-rendered HTML | `GET /dashboard` | Full operations dashboard |
 | Landing page | `GET /` | Hero landing with key metrics |
 | JSON API | `GET /dashboard/summary` | Raw snapshot data as JSON |
-| Next.js frontend | `http://localhost:3000` | Premium React landing page and dashboard |
+| Next.js frontend | `http://localhost:3000` | React landing page and dashboard |
 
 Start the server:
 
@@ -233,6 +233,16 @@ Use these gates for future landing-page or dashboard presentation work:
 - Avoid cheap meta labels, fake technical pills, excessive microcopy, nested cards, and giant wrapper panels unless they materially clarify the workflow.
 - Verify button contrast in both light and dark CTA areas.
 - Keep fallback demo telemetry visible for visual QA when the FastAPI backend is offline.
+
+Cheap/meta patterns to remove:
+
+- Decorative section markers, fake runtime tags, ornamental status chips, and brand-style labels that do not map to real product state.
+- Unsupported README badges or claims that are not backed by current CI output.
+- Repeated pill rows where plain text, table labels, or icon buttons would be clearer.
+
+Acceptable operational labels:
+
+- Labels that identify actual data, routes, filters, chart series, refresh state, API availability, audit lineage, or model/governance metadata.
 
 ## Customization
 

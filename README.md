@@ -2,7 +2,6 @@
 
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-97%20passing-brightgreen)]()
 
 ## Screenshots
 

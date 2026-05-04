@@ -52,6 +52,13 @@ flowchart TD
     class M,N,O,P,Q,R,S audit
 ```
 
+Diagram conventions:
+
+- Use subgraphs only for real system domains: data, model, audit, governance, dashboard, and clients.
+- Keep node labels short and concrete; avoid decorative labels or fake operating-state tags.
+- Quote endpoint labels and labels with punctuation so Mermaid renders consistently.
+- Use the shared Rift diagram palette from this document for new diagrams.
+
 ## Graph Schema
 
 ### Node Types
