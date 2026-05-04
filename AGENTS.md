@@ -170,4 +170,4 @@ A task is done when:
 ## Known Friction
 
 - `docker-compose.yml` maps Grafana to port `3000`, which conflicts with the default Next.js dev server. If both are needed, run one on a different port.
-- The frontend can display realistic demo telemetry when the FastAPI backend is offline; this is intentional for visual QA and screenshots.
+- The frontend can display realistic demo telemetry when the FastAPI backend is offline; this is intentional for demos and screenshots. Document the need to connect FastAPI for production, but do not put a large API warning banner in screenshot-oriented UI.

@@ -77,6 +77,24 @@ const scrollItems = [
 
 const partners = ["DuckDB", "Polars", "FastAPI", "Next.js", "XGBoost", "PyTorch", "Recharts", "TanStack Table"];
 
+const evidenceLanes = [
+  {
+    title: "Ingest",
+    body: "Bronze, silver, and gold ETL snapshots keep source lineage attached.",
+    image: "https://picsum.photos/seed/rift-ledger-ingest/900/700"
+  },
+  {
+    title: "Score",
+    body: "Graph embeddings and tabular features meet before calibration.",
+    image: "https://picsum.photos/seed/rift-model-score/900/700"
+  },
+  {
+    title: "Replay",
+    body: "Every reviewer decision can be reconstructed from local artifacts.",
+    image: "https://picsum.photos/seed/rift-audit-replay/900/700"
+  }
+];
+
 export function LandingExperience() {
   const root = useRef<HTMLElement>(null);
   const pinSection = useRef<HTMLElement>(null);
@@ -181,9 +199,13 @@ export function LandingExperience() {
         </div>
       </nav>
 
-      <section className="relative min-h-[100dvh] px-4 pb-24 pt-36 md:px-8 md:pb-32 md:pt-44">
+      <section className="relative min-h-[100dvh] px-4 pb-20 pt-32 md:px-8 md:pb-28 md:pt-40">
         <div className="absolute inset-0 -z-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(110,168,254,0.22),transparent_30%),radial-gradient(circle_at_86%_12%,rgba(47,191,113,0.14),transparent_26%),linear-gradient(135deg,rgba(8,13,27,0.94),rgba(3,7,18,0.98))]" />
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-45 grayscale contrast-125"
+            style={{ backgroundImage: "url(https://picsum.photos/seed/rift-forensic-command-wall/1920/1080)" }}
+          />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(110,168,254,0.32),transparent_30%),radial-gradient(circle_at_84%_18%,rgba(47,191,113,0.2),transparent_27%),linear-gradient(135deg,rgba(8,13,27,0.9),rgba(3,7,18,0.98))]" />
           <div className="absolute inset-x-0 top-28 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           <div className="absolute left-[8vw] top-36 hidden h-[62vh] w-px bg-gradient-to-b from-transparent via-white/15 to-transparent lg:block" />
           <div className="absolute inset-0 bg-[linear-gradient(rgba(110,168,254,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(110,168,254,0.06)_1px,transparent_1px)] bg-[size:96px_96px] opacity-30" />
@@ -191,21 +213,21 @@ export function LandingExperience() {
         </div>
 
         <div className="relative mx-auto max-w-[1400px]">
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,1.02fr)_minmax(430px,0.98fr)] lg:items-end">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(520px,1.05fr)] lg:items-center">
             <div className="min-w-0 max-w-6xl">
               <h1
                 data-hero-copy
-                className="max-w-6xl font-display text-[clamp(3rem,5vw,5.5rem)] font-semibold leading-[0.92] tracking-[-0.07em]"
+                className="max-w-6xl font-display text-[clamp(3.2rem,5.6vw,6.35rem)] font-semibold leading-[0.88] tracking-[-0.07em]"
               >
-                Follow the fraud graph until the evidence holds{" "}
+                Make fraud decisions{" "}
                 <span
                   className="mx-2 inline-block h-10 w-28 rounded-full bg-cover bg-center align-middle grayscale contrast-125 md:h-12 md:w-36"
-                  style={{ backgroundImage: "url(https://picsum.photos/seed/rift-inline-forensic-map/600/300)" }}
+                  style={{ backgroundImage: "url(https://picsum.photos/seed/rift-inline-ledger/600/300)" }}
                 />{" "}
-                in replay.
+                replayable.
               </h1>
               <p data-hero-copy className="mt-7 max-w-3xl text-lg leading-8 text-muted md:text-xl">
-                Rift is a local-first fraud lab where graph signals, calibrated uncertainty, and audit receipts converge into one reviewer-grade surface.
+                Rift turns graph risk, calibrated uncertainty, and governance evidence into one local-first review surface.
               </p>
               <div data-hero-copy className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -219,91 +241,93 @@ export function LandingExperience() {
                   className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/[0.08] px-7 py-4 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition hover:border-white/45 hover:bg-white/[0.12] active:scale-[0.98]"
                   href="#intelligence"
                 >
-                  Inspect the atlas
+                  Trace the workflow
                 </a>
               </div>
             </div>
 
-            <aside data-hero-copy className="glass-edge relative overflow-hidden rounded-[2rem] bg-slate-950/70 p-5 backdrop-blur-2xl">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_15%,rgba(110,168,254,0.2),transparent_30%)]" />
-              <div className="relative mb-5 flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="font-display text-3xl font-semibold tracking-[-0.05em]">DEC_84AF31</h2>
-                  <p className="mt-2 text-sm leading-6 text-muted">A replayable fraud path with model lineage attached.</p>
-                </div>
-                <LockKey className="h-5 w-5 text-emerald-300" weight="duotone" />
-              </div>
-
-              <div className="relative h-[390px] overflow-hidden rounded-[1.5rem] border border-white/10 bg-[radial-gradient(circle_at_50%_42%,rgba(110,168,254,0.15),transparent_34%),linear-gradient(135deg,rgba(15,23,42,0.9),rgba(2,6,23,0.96))]">
-                <svg className="absolute inset-0 h-full w-full" role="img" viewBox="0 0 640 420">
-                  <title>Fraud graph evidence map</title>
-                  <defs>
-                    <linearGradient id="edge-gradient" x1="0" x2="1" y1="0" y2="1">
-                      <stop offset="0%" stopColor="#6ea8fe" stopOpacity="0.7" />
-                      <stop offset="100%" stopColor="#2fbf71" stopOpacity="0.28" />
-                    </linearGradient>
-                  </defs>
-                  {[
-                    [118, 112, 298, 186],
-                    [298, 186, 470, 96],
-                    [298, 186, 506, 278],
-                    [118, 112, 190, 312],
-                    [190, 312, 506, 278],
-                    [298, 186, 190, 312],
-                    [470, 96, 506, 278]
-                  ].map(([x1, y1, x2, y2], index) => (
-                    <line
-                      key={`${x1}-${y1}-${index}`}
-                      stroke="url(#edge-gradient)"
-                      strokeDasharray={index % 2 ? "6 10" : undefined}
-                      strokeWidth="1.4"
-                      x1={x1}
-                      x2={x2}
-                      y1={y1}
-                      y2={y2}
-                    />
-                  ))}
-                  {[
-                    [118, 112, "device"],
-                    [298, 186, "txn"],
-                    [470, 96, "merchant"],
-                    [506, 278, "account"],
-                    [190, 312, "user"]
-                  ].map(([x, y, label]) => (
-                    <g key={label}>
-                      <circle cx={x as number} cy={y as number} fill="rgba(255,255,255,0.08)" r="34" stroke="rgba(255,255,255,0.16)" />
-                      <circle cx={x as number} cy={y as number} fill={label === "txn" ? "#ffffff" : "#6ea8fe"} r={label === "txn" ? "8" : "6"} />
-                      <text fill="rgba(243,246,255,0.72)" fontFamily="JetBrains Mono" fontSize="11" x={(x as number) - 24} y={(y as number) + 52}>
-                        {String(label).toUpperCase()}
-                      </text>
-                    </g>
-                  ))}
-                </svg>
-                <div className="absolute bottom-4 left-4 right-4 grid gap-3 sm:grid-cols-3">
-                  {[
-                    ["Risk", "0.782"],
-                    ["Band", "Review"],
-                    ["Trail", "6 hops"]
-                  ].map(([label, value]) => (
-                    <div className="border-l border-white/15 bg-slate-950/64 px-3 py-2" key={label}>
-                      <p className="text-xs text-muted">{label}</p>
-                      <p className="mt-1 font-mono text-lg font-semibold">{value}</p>
+            <aside data-hero-copy className="relative">
+              <div className="glass-edge relative overflow-hidden rounded-[2rem] bg-slate-950/72 p-4 backdrop-blur-2xl">
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 bg-cover bg-center opacity-25 grayscale contrast-125"
+                  style={{ backgroundImage: "url(https://picsum.photos/seed/rift-transaction-map/1400/1100)" }}
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_65%_20%,rgba(110,168,254,0.28),transparent_30%),linear-gradient(135deg,rgba(15,23,42,0.92),rgba(2,6,23,0.94))]" />
+                <div className="relative grid min-h-[560px] content-between gap-5">
+                  <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
+                    <div>
+                      <h2 className="font-display text-4xl font-semibold tracking-[-0.06em]">DEC_84AF31</h2>
+                      <p className="mt-2 max-w-sm text-sm leading-6 text-muted">A transaction path, model run, and reviewer outcome rendered as one traceable record.</p>
                     </div>
-                  ))}
-                </div>
-              </div>
-              <div className="relative mt-5 grid grid-cols-2 gap-3">
-                {[
-                  ["PR-AUC", "91.2%"],
-                  ["ECE", "0.031"],
-                  ["Reviewer load", "6.8%"],
-                  ["Audit rows", "18,472"]
-                ].map(([label, value]) => (
-                  <div className="border-t border-white/10 bg-white/[0.025] p-4" key={label}>
-                    <p className="text-xs text-muted">{label}</p>
-                    <p className="mt-2 font-mono text-2xl font-semibold">{value}</p>
+                    <LockKey className="h-5 w-5 shrink-0 text-emerald-300" weight="duotone" />
                   </div>
-                ))}
+
+                  <div className="relative h-[300px] overflow-hidden">
+                    <svg className="absolute inset-0 h-full w-full" role="img" viewBox="0 0 720 360">
+                      <title>Fraud graph evidence map</title>
+                      <defs>
+                        <linearGradient id="hero-edge-gradient" x1="0" x2="1" y1="0" y2="1">
+                          <stop offset="0%" stopColor="#6ea8fe" stopOpacity="0.78" />
+                          <stop offset="100%" stopColor="#2fbf71" stopOpacity="0.34" />
+                        </linearGradient>
+                      </defs>
+                      {[
+                        [92, 110, 322, 182],
+                        [322, 182, 594, 92],
+                        [322, 182, 620, 252],
+                        [92, 110, 182, 292],
+                        [182, 292, 620, 252],
+                        [322, 182, 182, 292],
+                        [594, 92, 620, 252],
+                        [92, 110, 594, 92]
+                      ].map(([x1, y1, x2, y2], index) => (
+                        <line
+                          key={`${x1}-${y1}-${index}`}
+                          stroke="url(#hero-edge-gradient)"
+                          strokeDasharray={index % 3 === 1 ? "6 12" : undefined}
+                          strokeWidth={index === 0 ? "1.8" : "1.2"}
+                          x1={x1}
+                          x2={x2}
+                          y1={y1}
+                          y2={y2}
+                        />
+                      ))}
+                      {[
+                        [92, 110, "device"],
+                        [322, 182, "transaction"],
+                        [594, 92, "merchant"],
+                        [620, 252, "account"],
+                        [182, 292, "user"]
+                      ].map(([x, y, label]) => (
+                        <g key={label}>
+                          <circle cx={x as number} cy={y as number} fill="rgba(255,255,255,0.08)" r={label === "transaction" ? "46" : "34"} stroke="rgba(255,255,255,0.18)" />
+                          <circle cx={x as number} cy={y as number} fill={label === "transaction" ? "#ffffff" : "#6ea8fe"} r={label === "transaction" ? "9" : "6"} />
+                          <text fill="rgba(243,246,255,0.72)" fontFamily="JetBrains Mono" fontSize="11" x={(x as number) - 30} y={(y as number) + 54}>
+                            {String(label).toUpperCase()}
+                          </text>
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-3">
+                    {evidenceLanes.map((item) => (
+                      <div className="group overflow-hidden border-t border-white/10 pt-3" key={item.title}>
+                        <div className="relative mb-3 h-20 overflow-hidden rounded-xl">
+                          <div
+                            aria-hidden="true"
+                            className="h-full w-full bg-cover bg-center opacity-80 grayscale contrast-125 transition-transform duration-700 ease-out group-hover:scale-105"
+                            style={{ backgroundImage: `url(${item.image})` }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" />
+                        </div>
+                        <h3 className="font-display text-xl font-semibold tracking-[-0.04em]">{item.title}</h3>
+                        <p className="mt-1 text-xs leading-5 text-muted">{item.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </aside>
           </div>

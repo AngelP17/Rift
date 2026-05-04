@@ -148,7 +148,7 @@ Launch the built-in dashboard:
 rift dashboard --host 127.0.0.1 --port 8000
 ```
 
-Launch the premium Next.js frontend:
+Launch the Next.js frontend:
 
 ```bash
 cd frontend
@@ -156,7 +156,7 @@ npm install
 npm run dev
 ```
 
-Then visit `http://localhost:3000` for the landing page or `http://localhost:3000/dashboard` for the React operations console. If the FastAPI backend is not running, the console uses realistic local demo telemetry so visual QA and screenshots still represent a populated system.
+Then visit `http://localhost:3000` for the landing page or `http://localhost:3000/dashboard` for the React operations console. The production path should connect to the FastAPI backend at `http://localhost:8000`; when that backend is not running, the console quietly uses realistic local demo telemetry so screenshots and demos stay populated.
 
 Note: the local Docker stack maps Grafana to `localhost:3000`, which conflicts with the default Next.js dev server port. If Grafana is already running, start Next.js on another port with `npm run dev -- --port 3001`.
 

@@ -87,7 +87,7 @@ The dashboard is built with a hybrid rendering approach:
 - **Server-rendered HTML** in `src/rift/dashboard/views.py` generates the full dashboard and landing page using Python f-strings with `html.escape()` for XSS safety.
 - **Static CSS** in `src/rift/dashboard/static/dashboard.css` provides the enterprise dark theme with CSS custom properties.
 - **Next.js frontend** in `frontend/` provides a React-based landing page and dashboard with Tailwind CSS, charts (Recharts), GSAP scroll interactions, Phosphor icons, and animated components.
-- **Fallback demo telemetry** in `frontend/lib/mock-dashboard.ts` keeps the React dashboard populated for visual QA and screenshots when the FastAPI API is unavailable locally.
+- **Fallback demo telemetry** in `frontend/lib/mock-dashboard.ts` keeps the React dashboard populated for demos and screenshots when the FastAPI API is unavailable locally. Production deployments should connect the frontend to the FastAPI service.
 
 ### Key Files
 
@@ -212,7 +212,7 @@ npm install
 npm run dev
 ```
 
-The frontend connects to the same FastAPI backend at `http://localhost:8000`. When the backend is offline, realistic demo telemetry is used as fallback data and the dashboard displays a banner indicating that local preview data is active.
+The frontend connects to the same FastAPI backend at `http://localhost:8000`. When the backend is offline, realistic demo telemetry is used as fallback data so the dashboard remains populated for screenshots and demo walkthroughs. This fallback is a preview aid; production use should connect the API and treat `/dashboard/summary` and `/metrics/latest` as the source of truth.
 
 To verify:
 
@@ -232,7 +232,7 @@ Use these gates for future landing-page or dashboard presentation work:
 - Bento grids should keep `grid-flow-dense` and span math that avoids intentional empty cells.
 - Avoid cheap meta labels, fake technical pills, excessive microcopy, nested cards, and giant wrapper panels unless they materially clarify the workflow.
 - Verify button contrast in both light and dark CTA areas.
-- Keep fallback demo telemetry visible for visual QA when the FastAPI backend is offline.
+- Keep fallback demo telemetry realistic and populated when the FastAPI backend is offline, but do not show a large warning banner in screenshots.
 
 Cheap/meta patterns to remove:
 

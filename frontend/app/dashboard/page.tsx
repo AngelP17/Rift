@@ -106,7 +106,7 @@ export default function DashboardPage() {
 
   const summary = summaryQuery.data;
   const metrics = metricsQuery.data?.metrics ?? summary?.current_metrics?.metrics;
-  const isDemoData = Boolean(summaryQuery.error || metricsQuery.error);
+  const usesDemoData = Boolean(summaryQuery.error || metricsQuery.error);
   const coverage = 1 - Number(metrics?.review_rate ?? 0);
   const tables = useTables(summary);
 
@@ -197,11 +197,6 @@ export default function DashboardPage() {
           </div>
         </nav>
 
-        {isDemoData ? (
-          <div className="mb-4 rounded-full border border-amber-300/25 bg-amber-300/10 px-5 py-3 text-sm text-amber-100">
-            API unavailable in this session, so the console is showing realistic local demo telemetry for visual QA.
-          </div>
-        ) : null}
         <motion.header
           className="glass-edge relative mb-6 overflow-hidden rounded-[28px] border border-[color:var(--color-line)] bg-slate-950/72 px-6 py-6 md:px-8 md:py-7"
           initial={{ opacity: 0, y: 24 }}
@@ -216,7 +211,7 @@ export default function DashboardPage() {
                 Evidence console for the fraud graph.
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-8 text-muted md:text-lg">
-                Review graph risk, calibration drift, replayable decisions, and data lineage from the same local snapshot. The console uses realistic demo telemetry when the API is offline so the investigation surface never looks empty.
+                Review graph risk, calibration drift, replayable decisions, and data lineage from the same local snapshot.
               </p>
             </div>
 
@@ -247,7 +242,9 @@ export default function DashboardPage() {
                 <div className="mt-3 text-sm text-ink">
                   {summary?.refreshed_at ? `Snapshot ${relativeTime(summary.refreshed_at)}` : "Waiting for API response"}
                 </div>
-                <div className="mt-2 text-sm text-muted">Polling `/dashboard/summary` and `/metrics/latest` every 30 seconds.</div>
+                <div className="mt-2 text-sm text-muted">
+                  {usesDemoData ? "Demo telemetry is active until the FastAPI service is connected." : "Connected to the FastAPI service."}
+                </div>
               </div>
             </div>
           </div>
