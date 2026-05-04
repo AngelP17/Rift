@@ -16,25 +16,40 @@ Rift is a modular fraud detection platform with seven layers:
 
 ```mermaid
 flowchart TD
-    A[Raw Transactions] --> B[Polars Feature Pipeline]
-    A --> C[Graph Builder]
-    C --> D[Heterogeneous Transaction Graph]
-    D --> E[GraphSAGE / GAT Encoder]
-    E --> F[Node Embeddings 16-dim]
-    B --> G[Tabular Features 20-dim]
-    F --> H[XGBoost Hybrid Classifier]
-    G --> H
-    H --> I[Raw Fraud Score]
-    I --> J[Calibration Layer]
-    J --> K[Calibrated Probability]
-    K --> L[Conformal Prediction]
-    L --> M[Decision + Confidence Band]
-    M --> N[SHAP + Counterfactual Explainer]
-    N --> O[Plain-English Audit Report]
-    M --> P[Decision Recorder]
-    P --> Q[DuckDB Audit Store]
-    Q --> R[Replay Engine]
-    R --> S[Operations Dashboard]
+    subgraph data ["Data and Features"]
+        A["Raw transactions"] --> B["Polars feature pipeline"]
+        A --> C["Graph builder"]
+        B --> G["Tabular features, 20 dim"]
+        C --> D["Heterogeneous transaction graph"]
+    end
+
+    subgraph model ["Graph Hybrid Model"]
+        D --> E["GraphSAGE / GAT encoder"]
+        E --> F["Node embeddings, 16 dim"]
+        F --> H["XGBoost hybrid classifier"]
+        G --> H
+        H --> I["Raw fraud score"]
+        I --> J["Calibration layer"]
+        J --> K["Calibrated probability"]
+        K --> L["Conformal prediction"]
+    end
+
+    subgraph audit ["Audit and Replay"]
+        L --> M["Decision + confidence band"]
+        M --> N["SHAP + counterfactual explainer"]
+        N --> O["Plain-English audit report"]
+        M --> P["Decision recorder"]
+        P --> Q["DuckDB audit store"]
+        Q --> R["Replay engine"]
+        R --> S["Operations dashboard"]
+    end
+
+    classDef data fill:#0f172a,stroke:#6ea8fe,color:#f3f6ff
+    classDef model fill:#12351f,stroke:#2fbf71,color:#f3f6ff
+    classDef audit fill:#3a1f12,stroke:#f39c12,color:#f3f6ff
+    class A,B,C,D,G data
+    class E,F,H,I,J,K,L model
+    class M,N,O,P,Q,R,S audit
 ```
 
 ## Graph Schema
@@ -134,31 +149,55 @@ Served at `GET /dashboard` via FastAPI. See [docs/dashboard.md](dashboard.md) fo
 
 ```mermaid
 flowchart LR
-    subgraph core ["Core"]
-        P[POST /predict]
-        R[GET /replay/id]
-        A[GET /audit/id]
-    end
-    subgraph dash ["Dashboard"]
-        D[GET /dashboard]
-        DS[GET /dashboard/summary]
-        DL[GET /]
-    end
-    subgraph export ["Exports"]
-        EMC[GET /dashboard/export/model-card]
-        EA[GET /dashboard/export/audit]
-    end
-    subgraph gov ["Governance"]
-        MC[POST /governance/model-card/run_id]
-        F[GET /fairness/status]
-        DR[GET /monitor/drift-status]
-        Q[GET /query]
+    subgraph client ["Clients"]
+        CLI["Typer CLI"]
+        WEB["Browser"]
+        API_CLIENT["API client"]
     end
 
-    CLIENT[Client] --> core
-    CLIENT --> dash
-    CLIENT --> export
-    CLIENT --> gov
+    subgraph core ["Decision Core"]
+        P["POST /predict"]
+        R["GET /replay/{decision_id}"]
+        A["GET /audit/{decision_id}"]
+    end
+
+    subgraph dash ["Dashboard and Frontend"]
+        D["GET /dashboard"]
+        DS["GET /dashboard/summary"]
+        DL["GET /"]
+        MET["GET /metrics/latest"]
+        CUR["GET /models/current"]
+    end
+
+    subgraph export ["Downloads"]
+        EMC["GET /dashboard/export/model-card"]
+        EA["GET /dashboard/export/audit"]
+    end
+
+    subgraph gov ["Governance"]
+        MC["POST /governance/model-card/{run_id}"]
+        F["GET /fairness/status"]
+        DR["GET /monitor/drift-status"]
+        Q["GET /query"]
+        ETL["GET /etl/status"]
+        LAKE["GET /lakehouse/query"]
+    end
+
+    CLI --> core
+    WEB --> dash
+    WEB --> export
+    API_CLIENT --> core
+    API_CLIENT --> gov
+    dash --> gov
+
+    classDef client fill:#0f172a,stroke:#6ea8fe,color:#f3f6ff
+    classDef endpoint fill:#10243f,stroke:#6ea8fe,color:#f3f6ff
+    classDef governance fill:#3a1f12,stroke:#f39c12,color:#f3f6ff
+    classDef output fill:#12351f,stroke:#2fbf71,color:#f3f6ff
+    class CLI,WEB,API_CLIENT client
+    class P,R,A,D,DS,DL,MET,CUR endpoint
+    class MC,F,DR,Q,ETL,LAKE governance
+    class EMC,EA output
 ```
 
 | Method | Endpoint | Description |

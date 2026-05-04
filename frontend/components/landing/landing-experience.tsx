@@ -159,12 +159,7 @@ export function LandingExperience() {
             <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-slate-950">
               <GitBranch size={18} weight="bold" />
             </span>
-            <span>
-              Rift
-              <span className="ml-2 hidden font-mono text-[10px] uppercase tracking-[0.28em] text-muted sm:inline">
-                Evidence OS
-              </span>
-            </span>
+            <span>Rift</span>
           </Link>
           <div className="hidden items-center gap-6 text-sm text-muted md:flex">
             <a className="transition hover:text-ink" href="#intelligence">
@@ -198,9 +193,6 @@ export function LandingExperience() {
         <div className="relative mx-auto max-w-[1400px]">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1.02fr)_minmax(430px,0.98fr)] lg:items-end">
             <div className="min-w-0 max-w-6xl">
-              <p data-hero-copy className="mb-7 max-w-2xl font-mono text-xs uppercase tracking-[0.38em] text-muted">
-                Fraud graph atlas / replay desk / local evidence store
-              </p>
               <h1
                 data-hero-copy
                 className="max-w-6xl font-display text-[clamp(3rem,5vw,5.5rem)] font-semibold leading-[0.92] tracking-[-0.07em]"
@@ -232,76 +224,72 @@ export function LandingExperience() {
               </div>
             </div>
 
-            <aside data-hero-copy className="glass-edge relative overflow-hidden rounded-[2.5rem] bg-slate-950/70 p-5 backdrop-blur-2xl">
+            <aside data-hero-copy className="glass-edge relative overflow-hidden rounded-[2rem] bg-slate-950/70 p-5 backdrop-blur-2xl">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_15%,rgba(110,168,254,0.2),transparent_30%)]" />
-              <div className="relative rounded-[2rem] border border-white/10 bg-slate-950/88 p-5">
-                <div className="mb-6 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-muted">Case graph</p>
-                    <h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.05em]">DEC_84AF31</h2>
-                  </div>
-                  <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-emerald-200">
-                    hash locked
-                  </div>
+              <div className="relative mb-5 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="font-display text-3xl font-semibold tracking-[-0.05em]">DEC_84AF31</h2>
+                  <p className="mt-2 text-sm leading-6 text-muted">A replayable fraud path with model lineage attached.</p>
                 </div>
+                <LockKey className="h-5 w-5 text-emerald-300" weight="duotone" />
+              </div>
 
-                <div className="relative h-[360px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-[radial-gradient(circle_at_50%_42%,rgba(110,168,254,0.15),transparent_34%),linear-gradient(135deg,rgba(15,23,42,0.9),rgba(2,6,23,0.96))]">
-                  <svg className="absolute inset-0 h-full w-full" role="img" viewBox="0 0 640 420">
-                    <title>Fraud graph evidence map</title>
-                    <defs>
-                      <linearGradient id="edge-gradient" x1="0" x2="1" y1="0" y2="1">
-                        <stop offset="0%" stopColor="#6ea8fe" stopOpacity="0.7" />
-                        <stop offset="100%" stopColor="#2fbf71" stopOpacity="0.28" />
-                      </linearGradient>
-                    </defs>
-                    {[
-                      [118, 112, 298, 186],
-                      [298, 186, 470, 96],
-                      [298, 186, 506, 278],
-                      [118, 112, 190, 312],
-                      [190, 312, 506, 278],
-                      [298, 186, 190, 312],
-                      [470, 96, 506, 278]
-                    ].map(([x1, y1, x2, y2], index) => (
-                      <line
-                        key={`${x1}-${y1}-${index}`}
-                        stroke="url(#edge-gradient)"
-                        strokeDasharray={index % 2 ? "6 10" : undefined}
-                        strokeWidth="1.4"
-                        x1={x1}
-                        x2={x2}
-                        y1={y1}
-                        y2={y2}
-                      />
-                    ))}
-                    {[
-                      [118, 112, "device"],
-                      [298, 186, "txn"],
-                      [470, 96, "merchant"],
-                      [506, 278, "account"],
-                      [190, 312, "user"]
-                    ].map(([x, y, label]) => (
-                      <g key={label}>
-                        <circle cx={x as number} cy={y as number} fill="rgba(255,255,255,0.08)" r="34" stroke="rgba(255,255,255,0.16)" />
-                        <circle cx={x as number} cy={y as number} fill={label === "txn" ? "#ffffff" : "#6ea8fe"} r={label === "txn" ? "8" : "6"} />
-                        <text fill="rgba(243,246,255,0.72)" fontFamily="JetBrains Mono" fontSize="11" x={(x as number) - 24} y={(y as number) + 52}>
-                          {String(label).toUpperCase()}
-                        </text>
-                      </g>
-                    ))}
-                  </svg>
-                  <div className="absolute bottom-4 left-4 right-4 grid gap-3 sm:grid-cols-3">
-                    {[
-                      ["risk", "0.782"],
-                      ["band", "review"],
-                      ["trail", "6 hops"]
-                    ].map(([label, value]) => (
-                      <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-3" key={label}>
-                        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted">{label}</p>
-                        <p className="mt-2 font-mono text-lg font-semibold">{value}</p>
-                      </div>
-                    ))}
-                  </div>
+              <div className="relative h-[390px] overflow-hidden rounded-[1.5rem] border border-white/10 bg-[radial-gradient(circle_at_50%_42%,rgba(110,168,254,0.15),transparent_34%),linear-gradient(135deg,rgba(15,23,42,0.9),rgba(2,6,23,0.96))]">
+                <svg className="absolute inset-0 h-full w-full" role="img" viewBox="0 0 640 420">
+                  <title>Fraud graph evidence map</title>
+                  <defs>
+                    <linearGradient id="edge-gradient" x1="0" x2="1" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#6ea8fe" stopOpacity="0.7" />
+                      <stop offset="100%" stopColor="#2fbf71" stopOpacity="0.28" />
+                    </linearGradient>
+                  </defs>
+                  {[
+                    [118, 112, 298, 186],
+                    [298, 186, 470, 96],
+                    [298, 186, 506, 278],
+                    [118, 112, 190, 312],
+                    [190, 312, 506, 278],
+                    [298, 186, 190, 312],
+                    [470, 96, 506, 278]
+                  ].map(([x1, y1, x2, y2], index) => (
+                    <line
+                      key={`${x1}-${y1}-${index}`}
+                      stroke="url(#edge-gradient)"
+                      strokeDasharray={index % 2 ? "6 10" : undefined}
+                      strokeWidth="1.4"
+                      x1={x1}
+                      x2={x2}
+                      y1={y1}
+                      y2={y2}
+                    />
+                  ))}
+                  {[
+                    [118, 112, "device"],
+                    [298, 186, "txn"],
+                    [470, 96, "merchant"],
+                    [506, 278, "account"],
+                    [190, 312, "user"]
+                  ].map(([x, y, label]) => (
+                    <g key={label}>
+                      <circle cx={x as number} cy={y as number} fill="rgba(255,255,255,0.08)" r="34" stroke="rgba(255,255,255,0.16)" />
+                      <circle cx={x as number} cy={y as number} fill={label === "txn" ? "#ffffff" : "#6ea8fe"} r={label === "txn" ? "8" : "6"} />
+                      <text fill="rgba(243,246,255,0.72)" fontFamily="JetBrains Mono" fontSize="11" x={(x as number) - 24} y={(y as number) + 52}>
+                        {String(label).toUpperCase()}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+                <div className="absolute bottom-4 left-4 right-4 grid gap-3 sm:grid-cols-3">
+                  {[
+                    ["Risk", "0.782"],
+                    ["Band", "Review"],
+                    ["Trail", "6 hops"]
+                  ].map(([label, value]) => (
+                    <div className="border-l border-white/15 bg-slate-950/64 px-3 py-2" key={label}>
+                      <p className="text-xs text-muted">{label}</p>
+                      <p className="mt-1 font-mono text-lg font-semibold">{value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
               <div className="relative mt-5 grid grid-cols-2 gap-3">
@@ -311,8 +299,8 @@ export function LandingExperience() {
                   ["Reviewer load", "6.8%"],
                   ["Audit rows", "18,472"]
                 ].map(([label, value]) => (
-                  <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-4" key={label}>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted">{label}</p>
+                  <div className="border-t border-white/10 bg-white/[0.025] p-4" key={label}>
+                    <p className="text-xs text-muted">{label}</p>
                     <p className="mt-2 font-mono text-2xl font-semibold">{value}</p>
                   </div>
                 ))}

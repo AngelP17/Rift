@@ -31,35 +31,55 @@ npm run dev
 
 Then visit `http://localhost:3000` for the GSAP-powered landing page or `http://localhost:3000/dashboard` for the React operations console.
 
+If the local Docker stack is running, Grafana also uses `localhost:3000`. In that case, start the frontend on a different port:
+
+```bash
+npm run dev -- --port 3001
+```
+
 ## Architecture
 
 ```mermaid
 flowchart TD
     subgraph backend ["FastAPI Backend"]
-        SNAP[dashboard_snapshot] --> KPIS[KPI Card Builder]
-        SNAP --> TABLES[Data Tables]
-        KPIS --> RENDER[build_dashboard_html]
+        SNAP["dashboard_snapshot"] --> KPIS["KPI card builder"]
+        SNAP --> TABLES["Data table payloads"]
+        SNAP --> EXPORTS["Model card and audit exports"]
+        KPIS --> RENDER["build_dashboard_html"]
         TABLES --> RENDER
-        RENDER --> HTML[Server-Rendered HTML]
+        RENDER --> HTML["Server-rendered HTML"]
     end
 
     subgraph static ["Static Assets"]
-        CSS[dashboard.css] --> HTML
+        CSS["dashboard.css"] --> HTML
     end
 
     subgraph routes ["Dashboard Routes"]
         HTML --> DASH["GET /dashboard"]
         HTML --> LAND["GET /"]
-        JSON[dashboard_snapshot JSON] --> API["GET /dashboard/summary"]
+        SNAP --> API["GET /dashboard/summary"]
+        EXPORTS --> DL["GET /dashboard/export/*"]
     end
 
     subgraph frontend ["Next.js Frontend - Optional"]
-        REACT[React Components] --> FETCH["fetch /dashboard/summary"]
+        REACT["React components"] --> FETCH["fetch /dashboard/summary"]
+        REACT --> METRICS["fetch /metrics/latest"]
         FETCH --> API
+        METRICS --> MAPI["GET /metrics/latest"]
     end
 
-    CLIENT[Browser] --> DASH
+    CLIENT["Browser"] --> DASH
     CLIENT --> REACT
+    CLIENT --> DL
+
+    classDef backend fill:#10243f,stroke:#6ea8fe,color:#f3f6ff
+    classDef route fill:#12351f,stroke:#2fbf71,color:#f3f6ff
+    classDef frontend fill:#0f172a,stroke:#6ea8fe,color:#f3f6ff
+    classDef export fill:#3a1f12,stroke:#f39c12,color:#f3f6ff
+    class SNAP,KPIS,TABLES,RENDER,HTML,CSS backend
+    class DASH,LAND,API,MAPI route
+    class REACT,FETCH,METRICS,CLIENT frontend
+    class EXPORTS,DL export
 ```
 
 The dashboard is built with a hybrid rendering approach:
@@ -84,14 +104,24 @@ The dashboard is built with a hybrid rendering approach:
 
 ```mermaid
 flowchart LR
-    RAW[Raw Metric Value] --> EVAL[Threshold Evaluator]
-    EVAL -->|above green| G["Green: Good"]
-    EVAL -->|above yellow| Y["Yellow: Warning"]
-    EVAL -->|below yellow| R["Red: Critical"]
-    G --> CARD[KPI Card Component]
+    RAW["Raw metric value"] --> EVAL["Threshold evaluator"]
+    EVAL -->|"meets green band"| G["Good"]
+    EVAL -->|"inside warning band"| Y["Warning"]
+    EVAL -->|"outside tolerance"| R["Critical"]
+    G --> CARD["KPI card component"]
     Y --> CARD
     R --> CARD
-    CARD --> DASH[Dashboard Render]
+    CARD --> DASH["Dashboard render"]
+    CARD --> SUMMARY["JSON summary consumer"]
+
+    classDef input fill:#0f172a,stroke:#6ea8fe,color:#f3f6ff
+    classDef good fill:#12351f,stroke:#2fbf71,color:#f3f6ff
+    classDef warn fill:#3a1f12,stroke:#f39c12,color:#f3f6ff
+    classDef bad fill:#3a1212,stroke:#e74c3c,color:#f3f6ff
+    class RAW,EVAL,CARD,SUMMARY,DASH input
+    class G good
+    class Y warn
+    class R bad
 ```
 
 KPI cards display governance and model health metrics with color-coded status:
@@ -183,6 +213,26 @@ npm run dev
 ```
 
 The frontend connects to the same FastAPI backend at `http://localhost:8000`. When the backend is offline, realistic demo telemetry is used as fallback data and the dashboard displays a banner indicating that local preview data is active.
+
+To verify:
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
+### Visual QA Gates
+
+Use these gates for future landing-page or dashboard presentation work:
+
+- Keep the first viewport readable on a small laptop: short hero copy, clear CTA, and no crowded card stacks above the fold.
+- Preserve the current image-led landing direction with large section-specific imagery and stable media frames.
+- Keep `GSAP` and `ScrollTrigger` interactions real and purposeful; avoid decorative motion that hides content or creates horizontal scroll.
+- Bento grids should keep `grid-flow-dense` and span math that avoids intentional empty cells.
+- Avoid cheap meta labels, fake technical pills, excessive microcopy, nested cards, and giant wrapper panels unless they materially clarify the workflow.
+- Verify button contrast in both light and dark CTA areas.
+- Keep fallback demo telemetry visible for visual QA when the FastAPI backend is offline.
 
 ## Customization
 

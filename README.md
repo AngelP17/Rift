@@ -26,24 +26,44 @@ The real power is in the backend pipeline and compliance features -- the dashboa
 
 ```mermaid
 flowchart LR
-    A[Raw Source Data] --> B[Bronze ETL Layer]
-    B --> C[Silver Canonical Transactions]
-    C --> D[Gold Feature Store]
-    D --> E[Polars Feature Engine]
-    C --> F[Graph Builder]
-    F --> G[GraphSAGE-style Encoder]
-    G --> H[Embeddings]
-    E --> I[Hybrid Fraud Model]
-    H --> I
-    I --> J[Calibration]
-    J --> K[Conformal Triage]
-    K --> L[Decision Recorder]
-    K --> M[Explainer]
-    L --> N[DuckDB Audit Store]
-    B --> O[DuckDB ETL Warehouse]
-    C --> O
-    D --> O
-    M --> P[Plain-English Report]
+    subgraph ingest ["Ingest and Normalize"]
+        A["Raw source data"] --> B["Bronze ETL layer"]
+        B --> C["Silver canonical transactions"]
+        C --> D["Gold feature store"]
+    end
+
+    subgraph intelligence ["Graph and Model Intelligence"]
+        D --> E["Polars feature engine"]
+        C --> F["Graph builder"]
+        F --> G["GraphSAGE-style encoder"]
+        G --> H["Transaction embeddings"]
+        E --> I["Hybrid fraud model"]
+        H --> I
+        I --> J["Calibration"]
+        J --> K["Conformal triage"]
+    end
+
+    subgraph audit ["Replayable Audit Evidence"]
+        K --> L["Decision recorder"]
+        K --> M["Explainer"]
+        L --> N["DuckDB audit store"]
+        M --> P["Plain-English report"]
+    end
+
+    subgraph warehouse ["Operational Warehouse"]
+        B --> O["DuckDB ETL warehouse"]
+        C --> O
+        D --> O
+    end
+
+    classDef source fill:#0f172a,stroke:#6ea8fe,color:#f3f6ff
+    classDef process fill:#10243f,stroke:#6ea8fe,color:#f3f6ff
+    classDef model fill:#12351f,stroke:#2fbf71,color:#f3f6ff
+    classDef audit fill:#3a1f12,stroke:#f39c12,color:#f3f6ff
+    class A,B,C,D,O source
+    class E,F,G,H,I,J,K process
+    class I,G model
+    class L,M,N,P audit
 ```
 
 ## Why Rift exists
@@ -138,6 +158,8 @@ npm run dev
 ```
 
 Then visit `http://localhost:3000` for the landing page or `http://localhost:3000/dashboard` for the React operations console. If the FastAPI backend is not running, the console uses realistic local demo telemetry so visual QA and screenshots still represent a populated system.
+
+Note: the local Docker stack maps Grafana to `localhost:3000`, which conflicts with the default Next.js dev server port. If Grafana is already running, start Next.js on another port with `npm run dev -- --port 3001`.
 
 Run the local orchestration and lakehouse workflow:
 
@@ -266,17 +288,31 @@ The local equivalents are:
 
 ```mermaid
 flowchart LR
-    A[Raw Transactions] --> B[Parquet Lake]
-    B --> C[DuckDB Lakehouse Views]
-    B --> D[Local Spark Jobs]
-    C --> E[Audit and Governance Queries]
-    D --> F[Training and Batch Pipelines]
-    F --> G[MLflow Local Tracking]
-    E --> H[FastAPI Dashboard]
-    F --> H
-    I[Optional MinIO] --> B
-    J[Airflow DAGs] --> F
-    J --> E
+    subgraph storage ["Local Lake Storage"]
+        A["Raw transactions"] --> B["Parquet lake"]
+        I["Optional MinIO"] --> B
+    end
+
+    subgraph compute ["SQL and Batch Compute"]
+        B --> C["DuckDB lakehouse views"]
+        B --> D["Local Spark jobs"]
+        J["Airflow DAGs"] --> D
+    end
+
+    subgraph operations ["Operational Surfaces"]
+        C --> E["Audit and governance queries"]
+        D --> F["Training and batch pipelines"]
+        F --> G["MLflow local tracking"]
+        E --> H["FastAPI dashboard"]
+        F --> H
+    end
+
+    classDef storage fill:#0f172a,stroke:#6ea8fe,color:#f3f6ff
+    classDef compute fill:#10243f,stroke:#6ea8fe,color:#f3f6ff
+    classDef surface fill:#12351f,stroke:#2fbf71,color:#f3f6ff
+    class A,B,I storage
+    class C,D,J compute
+    class E,F,G,H surface
 ```
 
 This stack is designed to feel like a modern managed analytics platform while staying 100% open-source and zero-cost for local development, demos, and self-hosted deployment.
@@ -314,15 +350,23 @@ The monitor can optionally trigger retraining when drift exceeds a chosen thresh
 
 ```mermaid
 flowchart TD
-    A[Reference Dataset] --> C[Feature Extraction]
-    B[Current Dataset] --> C
-    C --> D[Drift Detector]
-    D --> E{Drift?}
-    E -->|No| F[Store Drift Report]
-    E -->|Yes| G[Trigger Retraining]
-    G --> H[Write New Run Metadata]
-    F --> I[Governance DB]
+    A["Reference dataset"] --> C["Feature extraction"]
+    B["Current dataset"] --> C
+    C --> D["Drift detector"]
+    D --> E{"Drift exceeds threshold?"}
+    E -->|"No"| F["Store drift report"]
+    E -->|"Yes"| G["Trigger retraining"]
+    G --> H["Write new run metadata"]
+    F --> I["Governance DuckDB"]
     H --> I
+    I --> J["Dashboard and model cards"]
+
+    classDef data fill:#0f172a,stroke:#6ea8fe,color:#f3f6ff
+    classDef check fill:#10243f,stroke:#f39c12,color:#f3f6ff
+    classDef output fill:#12351f,stroke:#2fbf71,color:#f3f6ff
+    class A,B,C data
+    class D,E check
+    class F,G,H,I,J output
 ```
 
 ## Sector profiles and plugins
@@ -368,6 +412,22 @@ Rift now includes:
 - GitHub Actions validation gates under `.github/workflows/validate.yml`;
 - CI helper scripts for fairness, drift, model cards, and query validation.
 
+Useful local verification commands:
+
+```bash
+python3 -m pytest -q
+ruff check src/ tests/
+./scripts/ci_validate.sh
+```
+
+Frontend verification:
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
 ## Storage and lakehouse
 
 Rift now exposes a storage abstraction and SQL-first lakehouse workflow.
@@ -406,18 +466,28 @@ The pipeline supports:
 
 ```mermaid
 flowchart TD
-    A[Raw CSV / JSON / Parquet] --> B[Extract]
-    B --> C[Normalize Aliases]
-    C --> D[Validate and Deduplicate]
-    D --> E[Redact Sensitive Fields]
-    E --> F[Bronze Snapshot]
-    E --> G[Silver Canonical Transactions]
-    G --> H[Gold Feature Store]
-    F --> I[Warehouse Loader]
+    A["Raw CSV / JSON / Parquet"] --> B["Extract"]
+    B --> C["Normalize aliases"]
+    C --> D["Validate and deduplicate"]
+    D --> E["Redact sensitive fields"]
+    E --> F["Bronze snapshot"]
+    E --> G["Silver canonical transactions"]
+    G --> H["Gold feature store"]
+    F --> I["Warehouse loader"]
     G --> I
     H --> I
-    I --> J[DuckDB ETL Warehouse]
-    G --> K[Current Training Snapshot]
+    I --> J["DuckDB ETL warehouse"]
+    G --> K["Current training snapshot"]
+    H --> L["Dashboard metrics and lakehouse views"]
+
+    classDef raw fill:#0f172a,stroke:#6ea8fe,color:#f3f6ff
+    classDef transform fill:#10243f,stroke:#6ea8fe,color:#f3f6ff
+    classDef governed fill:#3a1f12,stroke:#f39c12,color:#f3f6ff
+    classDef output fill:#12351f,stroke:#2fbf71,color:#f3f6ff
+    class A raw
+    class B,C,D transform
+    class E governed
+    class F,G,H,I,J,K,L output
 ```
 
 ## Fairness governance
@@ -435,13 +505,21 @@ It supports:
 
 ```mermaid
 flowchart TD
-    A[Canonical Dataset] --> B[Load Current Model]
-    B --> C[Score Probabilities]
-    C --> D[Group by Sensitive Column]
-    D --> E[Compute Fairness Metrics]
-    E --> F[Governance Report JSON]
-    F --> G[Governance DuckDB]
-    F --> H[Dashboard]
+    A["Canonical dataset"] --> B["Load current model"]
+    B --> C["Score probabilities"]
+    C --> D["Group by sensitive column"]
+    D --> E["Compute fairness metrics"]
+    E --> F["Governance report JSON"]
+    F --> G["Governance DuckDB"]
+    F --> H["Dashboard"]
+    F --> I["Model card context"]
+
+    classDef data fill:#0f172a,stroke:#6ea8fe,color:#f3f6ff
+    classDef metric fill:#10243f,stroke:#f39c12,color:#f3f6ff
+    classDef output fill:#12351f,stroke:#2fbf71,color:#f3f6ff
+    class A,B,C data
+    class D,E metric
+    class F,G,H,I output
 ```
 
 ## Federated training scaffolding
@@ -577,6 +655,7 @@ To keep the repo aligned with shipped behavior:
 - update Markdown/docs whenever CLI, API, audit output, or workflow behavior changes;
 - use Mermaid blocks for all diagrams;
 - do not add ASCII art diagrams to docs.
+- keep agent-facing repo guidance in `AGENTS.md` practical and derived from code, scripts, manifests, and CI.
 
 ## Roadmap
 
@@ -610,6 +689,7 @@ Next iterations:
 ```bash
 pip install -e ".[dev]"
 export PYTHONPATH=src
+```
 
 Contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 

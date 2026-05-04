@@ -19,17 +19,19 @@ Click any badge to open the notebook in Google Colab:
 
 ```mermaid
 flowchart LR
-    NB1[01 Data Generation] --> NB2[02 Graph Construction]
-    NB2 --> NB3[03 Model Ablation]
-    NB3 --> NB4[04 Calibration]
-    NB4 --> NB5[05 Conformal Prediction]
-    NB5 --> NB6[06 Audit Examples]
+    NB1["01 Data Generation"] -->|"transactions"| NB2["02 Graph Construction"]
+    NB2 -->|"graph and motif features"| NB3["03 Model Ablation"]
+    NB3 -->|"trained model runs"| NB4["04 Calibration"]
+    NB4 -->|"calibrated scores"| NB5["05 Conformal Prediction"]
+    NB5 -->|"decisions and bands"| NB6["06 Audit Examples"]
 
-    NB1 -->|transactions| NB2
-    NB2 -->|graph| NB3
-    NB3 -->|trained model| NB4
-    NB4 -->|calibrated scores| NB5
-    NB5 -->|decisions| NB6
+    NB1 -. "reproducible seed" .-> NB3
+    NB3 -. "metrics" .-> NB6
+
+    classDef notebook fill:#10243f,stroke:#6ea8fe,color:#f3f6ff
+    classDef audit fill:#3a1f12,stroke:#f39c12,color:#f3f6ff
+    class NB1,NB2,NB3,NB4,NB5 notebook
+    class NB6 audit
 ```
 
 Each notebook builds on the output of the previous one, but each is also self-contained -- it generates its own data if needed.

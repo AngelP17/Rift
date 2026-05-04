@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
 import { motion } from "framer-motion";
-import { ArrowsClockwise, Database, GitBranch, Graph, LockKey, Pulse, ShieldWarning, Table } from "@phosphor-icons/react";
+import { ArrowsClockwise, Database, GitBranch, LockKey, Pulse, ShieldWarning, Table } from "@phosphor-icons/react";
 import { DataTable } from "@/components/dashboard/data-table";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { OperationsBreakdownChart } from "@/components/dashboard/operations-breakdown-chart";
@@ -189,16 +189,11 @@ export default function DashboardPage() {
               <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-slate-950">
                 <GitBranch size={18} weight="bold" />
               </span>
-              <span>
-                Rift
-                <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.28em] text-muted">Evidence console</span>
-              </span>
+              <span>Rift Evidence Console</span>
             </Link>
-            <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-muted">
-              <span className="rounded-full border border-white/10 px-3 py-1">Graph atlas</span>
-              <span className="rounded-full border border-white/10 px-3 py-1">Decision replay</span>
-              <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-emerald-200">Hash locked</span>
-            </div>
+            <Link className="text-sm text-muted transition hover:text-ink" href="/">
+              Landing
+            </Link>
           </div>
         </nav>
 
@@ -208,7 +203,7 @@ export default function DashboardPage() {
           </div>
         ) : null}
         <motion.header
-          className="glass-edge relative mb-6 overflow-hidden rounded-[36px] border border-[color:var(--color-line)] bg-slate-950/72 px-6 py-6 md:px-8 md:py-7"
+          className="glass-edge relative mb-6 overflow-hidden rounded-[28px] border border-[color:var(--color-line)] bg-slate-950/72 px-6 py-6 md:px-8 md:py-7"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -217,10 +212,6 @@ export default function DashboardPage() {
           <div className="absolute inset-0 bg-[linear-gradient(rgba(110,168,254,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(110,168,254,0.05)_1px,transparent_1px)] bg-[size:72px_72px] opacity-40" />
           <div className="relative grid gap-7 xl:grid-cols-[minmax(0,1fr)_430px] xl:items-end">
             <div className="max-w-4xl">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[color:var(--color-line)] bg-white/[0.04] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
-                <Graph className="h-4 w-4 text-accent" />
-                Live fraud graph evidence desk
-              </div>
               <h1 className="font-display text-[clamp(2.6rem,5vw,4.75rem)] leading-[0.94] tracking-[-0.06em]">
                 Evidence console for the fraud graph.
               </h1>
@@ -230,20 +221,20 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-3">
-              <div className="rounded-[28px] border border-white/10 bg-slate-950/60 p-5">
+              <div className="border-l border-white/10 bg-slate-950/44 px-5 py-4">
                 <div className="flex items-center justify-between gap-4">
-                  <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">Current evidence chain</div>
+                  <div className="text-sm text-muted">Current evidence chain</div>
                   <LockKey className="h-4 w-4 text-emerald-300" weight="duotone" />
                 </div>
                 <div className="mt-3 break-all font-mono text-base text-ink">{summary?.current_model?.run_id ?? "No active run"}</div>
                 <div className="mt-2 text-sm text-muted">{summary?.current_metrics?.model_type ?? "No model metadata"}</div>
               </div>
-              <div className="rounded-[28px] border border-white/10 bg-slate-950/60 p-5">
-                <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.22em] text-muted">
-                  <span>Live Refresh</span>
+              <div className="border-l border-white/10 bg-slate-950/44 px-5 py-4">
+                <div className="flex items-center justify-between gap-4 text-sm text-muted">
+                  <span>Refresh status</span>
                   <span
                     className={cn(
-                      "inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[10px]",
+                      "inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs",
                       summaryQuery.isValidating || metricsQuery.isValidating
                         ? "bg-accent/10 text-accent"
                         : "bg-emerald-400/10 text-emerald-300"
