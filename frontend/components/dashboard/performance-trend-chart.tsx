@@ -27,17 +27,21 @@ export function PerformanceTrendChart({ data }: PerformanceTrendChartProps) {
     >
       <div className="mb-6 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Performance Trend</p>
-          <h3 className="mt-2 font-display text-[2rem] tracking-[-0.05em] text-ink">PR-AUC history with zoomable brush</h3>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Model health</p>
+          <h3 className="mt-2 font-display text-[2rem] tracking-[-0.05em] text-ink">PR-AUC across recent runs</h3>
         </div>
         <p className="max-w-xl text-sm leading-7 text-muted">
-          Recharts replaces the previous Chart.js sparkline with interactive tooltips, area gradients, and a brush for zooming into individual runs.
+          Each point is a registered run under .rift/runs/. Drag the brush to inspect a narrower window of runs.
         </p>
       </div>
 
       <div className="h-[340px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data}>
+          <AreaChart
+            data={data}
+            aria-label="Area chart of PR-AUC across recent training runs"
+            role="img"
+          >
             <defs>
               <linearGradient id="prauc-fill" x1="0" x2="0" y1="0" y2="1">
                 <stop offset="0%" stopColor="rgba(110,168,254,0.55)" />
@@ -45,14 +49,25 @@ export function PerformanceTrendChart({ data }: PerformanceTrendChartProps) {
               </linearGradient>
             </defs>
             <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-            <XAxis dataKey="run_id" stroke="#92a3c7" tick={{ fontSize: 11 }} tickFormatter={(value) => value.replace("run_", "")} />
-            <YAxis domain={[0, 1]} stroke="#92a3c7" tick={{ fontSize: 11 }} tickFormatter={(value: number) => formatPercent(value, 0)} />
+            <XAxis
+              dataKey="run_id"
+              stroke="#92a3c7"
+              tick={{ fontSize: 11 }}
+              tickFormatter={(value) => value.replace(/^run_/, "")}
+            />
+            <YAxis
+              domain={[0, 1]}
+              stroke="#92a3c7"
+              tick={{ fontSize: 11 }}
+              tickFormatter={(value: number) => formatPercent(value, 0)}
+            />
             <Tooltip
               contentStyle={{
                 background: "rgba(8, 13, 27, 0.96)",
                 borderRadius: 18,
                 border: "1px solid rgba(110, 168, 254, 0.18)"
               }}
+              labelFormatter={(value) => `Run ${String(value).replace(/^run_/, "")}`}
               formatter={(value: number) => [formatPercent(value, 2), "PR-AUC"]}
             />
             <Area

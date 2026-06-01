@@ -10,7 +10,7 @@ import {
   SortingState,
   useReactTable
 } from "@tanstack/react-table";
-import { ArrowsDownUp, MagnifyingGlass } from "@phosphor-icons/react";
+import { ArrowsDownUp, Check, Copy, MagnifyingGlass } from "@phosphor-icons/react";
 import { DetailModal } from "@/components/dashboard/detail-modal";
 import { cn, titleCase } from "@/lib/utils";
 
@@ -36,7 +36,19 @@ export function DataTable<TData extends Record<string, unknown>>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [search, setSearch] = useState("");
   const [selectedRow, setSelectedRow] = useState<TData | null>(null);
+  const [copied, setCopied] = useState(false);
   const deferredSearch = useDeferredValue(search);
+
+  const onCopyCommand = async () => {
+    if (!emptyState?.command || typeof navigator === "undefined") return;
+    try {
+      await navigator.clipboard.writeText(emptyState.command);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   const table = useReactTable({
     data,
@@ -79,8 +91,10 @@ export function DataTable<TData extends Record<string, unknown>>({
                 value={search}
               />
             </label>
-            <div className="text-sm text-muted">
-              {rowCountLabel}
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-muted">
+              <span className="font-mono text-ink">{rowCountLabel}</span>
+              <span aria-hidden="true" className="h-1 w-1 rounded-full bg-white/20" />
+              <span>{data.length} total</span>
             </div>
           </div>
         </div>
@@ -135,9 +149,25 @@ export function DataTable<TData extends Record<string, unknown>>({
                 <p className="text-sm font-semibold text-ink">{emptyState.title}</p>
                 <p className="max-w-2xl text-sm leading-6 text-muted">{emptyState.description}</p>
                 {emptyState.command ? (
-                  <code className="rounded-full border border-white/10 bg-slate-950/80 px-3 py-1 font-mono text-xs text-ink">
-                    {emptyState.command}
-                  </code>
+                  <div className="flex items-center gap-2">
+                    <code className="rounded-full border border-white/10 bg-slate-950/80 px-3 py-1 font-mono text-xs text-ink">
+                      {emptyState.command}
+                    </code>
+                    <button
+                      aria-label={copied ? "Command copied" : "Copy command"}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition",
+                        copied
+                          ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
+                          : "border-white/10 bg-white/[0.03] text-muted hover:border-white/30 hover:text-ink"
+                      )}
+                      onClick={onCopyCommand}
+                      type="button"
+                    >
+                      {copied ? <Check className="h-3 w-3" weight="bold" /> : <Copy className="h-3 w-3" weight="bold" />}
+                      {copied ? "Copied" : "Copy"}
+                    </button>
+                  </div>
                 ) : null}
               </div>
             ) : (

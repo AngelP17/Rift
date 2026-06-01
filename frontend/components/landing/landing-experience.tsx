@@ -19,6 +19,11 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
+const prefersReducedMotion = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+};
+
 const bentoCards = [
   {
     title: "Device farms become neighborhoods",
@@ -61,17 +66,20 @@ const scrollItems = [
   {
     title: "Detect coordinated fraud rings",
     body: "GraphSAGE-style embeddings capture the shared infrastructure behind mule accounts, device farms, and merchant collusion.",
-    metric: "47.2% recall at 1% FPR"
+    metric: "47.2% recall at 1% FPR",
+    metricSource: "Sample telemetry"
   },
   {
     title: "Calibrate before decisions",
     body: "Isotonic and Platt calibration keep probabilities aligned with observed outcomes before anything reaches an analyst.",
-    metric: "3.1% expected calibration error"
+    metric: "3.1% expected calibration error",
+    metricSource: "Sample telemetry"
   },
   {
     title: "Prove the audit trail",
     body: "Decision payloads, model lineage, and SHA-256 hashes make every intervention replayable from local artifacts.",
-    metric: "64-char deterministic hashes"
+    metric: "64-char deterministic hashes",
+    metricSource: "Structural"
   }
 ];
 
@@ -102,6 +110,19 @@ export function LandingExperience() {
 
   useGSAP(
     () => {
+      if (prefersReducedMotion()) {
+        gsap.set(
+          [
+            "[data-hero-copy]",
+            "[data-bento-card]",
+            "[data-pinned-story] span",
+            "[data-scroll-card]"
+          ],
+          { opacity: 1, y: 0, scale: 1 }
+        );
+        return;
+      }
+
       gsap.from("[data-hero-copy]", {
         opacity: 0,
         y: 28,
@@ -420,7 +441,8 @@ export function LandingExperience() {
                 </div>
                 <h3 className="max-w-2xl font-display text-4xl font-semibold tracking-[-0.05em]">{item.title}</h3>
                 <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">{item.body}</p>
-                <p className="mt-10 font-mono text-3xl font-semibold text-white">{item.metric}</p>
+                <p className="mt-2 max-w-2xl text-[11px] uppercase tracking-[0.22em] text-muted">{item.metricSource}</p>
+                <p className="mt-1 font-mono text-3xl font-semibold text-white">{item.metric}</p>
               </article>
             ))}
           </div>

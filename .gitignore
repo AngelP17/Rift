@@ -6,3 +6,5 @@ __pycache__/
 logs/
 frontend/node_modules/
 frontend/.next/
+frontend/.env.local
+.venv/

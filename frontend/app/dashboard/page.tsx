@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
 import { motion } from "framer-motion";
-import { ArrowsClockwise, Database, GitBranch, LockKey, Pulse, ShieldWarning, Table } from "@phosphor-icons/react";
+import { ArrowsClockwise, GitBranch, LockKey } from "@phosphor-icons/react";
 import { DataTable } from "@/components/dashboard/data-table";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { OperationsBreakdownChart } from "@/components/dashboard/operations-breakdown-chart";
@@ -16,6 +16,12 @@ import { cn, formatDecimal, formatNumber, formatPercent, relativeTime, titleCase
 
 type DashboardRow = Record<string, unknown>;
 type KpiTone = "good" | "warn" | "bad" | "neutral";
+
+function useMounted(): boolean {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted;
+}
 
 function statusTone(value: number, target: number, direction: "up" | "down"): KpiTone {
   if (direction === "up") {
@@ -134,12 +140,19 @@ function useTables(summary?: DashboardSummary) {
 export default function DashboardPage() {
   const summaryQuery = useDashboardSummary();
   const metricsQuery = useMetrics();
+  const mounted = useMounted();
 
   const summary = summaryQuery.data;
   const metrics = metricsQuery.data?.metrics ?? summary?.current_metrics?.metrics;
   const usesDemoData = Boolean(summaryQuery.error || metricsQuery.error);
   const coverage = 1 - Number(metrics?.review_rate ?? 0);
   const tables = useTables(summary);
+
+  const snapshotLabel = mounted && summary?.refreshed_at
+    ? `Snapshot ${relativeTime(summary.refreshed_at)}`
+    : summary?.refreshed_at
+      ? "Snapshot pending"
+      : "Waiting for API response";
 
   const operationsData = useMemo(
     () => [
@@ -287,8 +300,8 @@ export default function DashboardPage() {
                       : "Live"}
                   </span>
                 </div>
-                <div className="mt-3 text-sm text-ink">
-                  {summary?.refreshed_at ? `Snapshot ${relativeTime(summary.refreshed_at)}` : "Waiting for API response"}
+                <div className="mt-3 text-sm text-ink" suppressHydrationWarning>
+                  {snapshotLabel}
                 </div>
                 <div className="mt-2 text-sm text-muted">
                   {usesDemoData
@@ -327,42 +340,6 @@ export default function DashboardPage() {
           <PerformanceTrendChart data={summary?.run_history ?? []} />
           <OperationsBreakdownChart data={operationsData} />
         </section>
-
-        <motion.section
-          className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4"
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
-        >
-          {[
-            {
-              icon: ShieldWarning,
-              title: "Audit drill-downs",
-              body: "Every row opens a modal with the full JSON payload from the summary snapshot."
-            },
-            {
-              icon: Table,
-              title: "Searchable tables",
-              body: "Global filtering and sorting are powered by TanStack Table across all six operational views."
-            },
-            {
-              icon: Pulse,
-              title: "Smooth motion system",
-              body: "Framer Motion handles card reveals, hover states, and modal transitions with the same easing system as the new landing page."
-            },
-            {
-              icon: Database,
-              title: "Same source of truth",
-              body: "The SPA consumes the existing FastAPI endpoints rather than inventing a second backend."
-            }
-          ].map((item) => (
-            <article className="surface rounded-[28px] border border-[color:var(--color-line)] p-5" key={item.title}>
-              <item.icon className="h-5 w-5 text-accent" />
-              <h2 className="mt-4 font-display text-2xl tracking-[-0.04em]">{item.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-muted">{item.body}</p>
-            </article>
-          ))}
-        </motion.section>
 
         <section className="grid gap-5 xl:grid-cols-2">
           {tables.map((table) => (

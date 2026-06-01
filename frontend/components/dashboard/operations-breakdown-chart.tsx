@@ -26,20 +26,24 @@ export function OperationsBreakdownChart({ data }: OperationsBreakdownChartProps
     >
       <div className="mb-6 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.22em] text-muted">System Activity</p>
-          <h3 className="mt-2 font-display text-[2rem] tracking-[-0.05em] text-ink">Operational workload snapshot</h3>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Workload</p>
+          <h3 className="mt-2 font-display text-[2rem] tracking-[-0.05em] text-ink">Recent activity by surface</h3>
         </div>
         <p className="max-w-xl text-sm leading-7 text-muted">
-          Use the bar chart to compare ETL, fairness, drift, federated, dataset, and audit activity without jumping between tables.
+          Count of records across the ETL, governance, drift, federated, dataset, and audit streams for the current snapshot window.
         </p>
       </div>
 
       <div className="h-[340px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
+          <BarChart
+            data={data}
+            aria-label="Bar chart of recent activity counts by operational surface"
+            role="img"
+          >
             <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
             <XAxis dataKey="label" stroke="#92a3c7" tick={{ fontSize: 11 }} />
-            <YAxis stroke="#92a3c7" tick={{ fontSize: 11 }} />
+            <YAxis stroke="#92a3c7" tick={{ fontSize: 11 }} allowDecimals={false} />
             <Tooltip
               cursor={{ fill: "rgba(255,255,255,0.03)" }}
               contentStyle={{
@@ -47,6 +51,7 @@ export function OperationsBreakdownChart({ data }: OperationsBreakdownChartProps
                 borderRadius: 18,
                 border: "1px solid rgba(110, 168, 254, 0.18)"
               }}
+              formatter={(value: number) => [value.toLocaleString("en-US"), "Records"]}
             />
             <Bar dataKey="value" radius={[14, 14, 0, 0]}>
               {data.map((entry) => (
