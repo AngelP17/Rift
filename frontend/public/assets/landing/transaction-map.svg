@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1100" role="img" aria-label="Transaction graph map backdrop">
+  <defs>
+    <linearGradient id="g-map-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a1124"/>
+      <stop offset="100%" stop-color="#070b18"/>
+    </linearGradient>
+    <radialGradient id="g-map-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="rgba(110,168,254,0.18)"/>
+      <stop offset="100%" stop-color="rgba(110,168,254,0)"/>
+    </radialGradient>
+    <pattern id="g-map-grid" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M 80 0 L 0 0 0 80" fill="none" stroke="rgba(110,168,254,0.05)" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1400" height="1100" fill="url(#g-map-bg)"/>
+  <rect width="1400" height="1100" fill="url(#g-map-grid)"/>
+  <circle cx="700" cy="550" r="420" fill="url(#g-map-glow)"/>
+
+  <g stroke="rgba(110,168,254,0.18)" stroke-width="1" fill="none">
+    <line x1="0" y1="220" x2="1400" y2="220"/>
+    <line x1="0" y1="440" x2="1400" y2="440"/>
+    <line x1="0" y1="660" x2="1400" y2="660"/>
+    <line x1="0" y1="880" x2="1400" y2="880"/>
+    <line x1="280" y1="0" x2="280" y2="1100"/>
+    <line x1="560" y1="0" x2="560" y2="1100"/>
+    <line x1="840" y1="0" x2="840" y2="1100"/>
+    <line x1="1120" y1="0" x2="1120" y2="1100"/>
+  </g>
+
+  <g stroke="rgba(110,168,254,0.32)" stroke-width="1.4" fill="none">
+    <line x1="180" y1="240" x2="700" y2="550"/>
+    <line x1="700" y1="550" x2="1180" y2="240"/>
+    <line x1="700" y1="550" x2="1240" y2="660"/>
+    <line x1="180" y1="240" x2="360" y2="780"/>
+    <line x1="360" y1="780" x2="1240" y2="660"/>
+    <line x1="700" y1="550" x2="360" y2="780"/>
+    <line x1="1180" y1="240" x2="1240" y2="660"/>
+    <line x1="180" y1="240" x2="1180" y2="240" stroke-dasharray="4 8"/>
+  </g>
+
+  <g>
+    <circle cx="700" cy="550" r="46" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.4)"/>
+    <circle cx="700" cy="550" r="9" fill="#f3f6ff"/>
+  </g>
+</svg>

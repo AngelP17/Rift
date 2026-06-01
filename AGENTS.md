@@ -55,6 +55,7 @@ Next.js frontend:
 
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
 
@@ -63,6 +64,30 @@ Local orchestration stack:
 ```bash
 ./scripts/init_local_stack.sh
 ```
+
+## Flagship Demo Flow
+
+This is the single path the README, docs, and screenshot runbook are validated against:
+
+1. Install in editable mode: `python3 -m pip install -e ".[dev]"`.
+2. Generate synthetic transactions: `rift generate --txns 5000 --users 500 --merchants 120 --fraud-rate 0.03`.
+3. Train the hybrid model: `rift train --model graphsage_xgb --time-split`.
+4. Score a sample transaction: `rift predict --tx demo/sample_transaction.json`.
+5. Start the FastAPI backend: `rift dashboard --host 127.0.0.1 --port 8000`.
+6. Start the Next.js frontend: `cd frontend && npm run dev`.
+7. Open `http://localhost:3000` for the landing page and `http://localhost:3000/dashboard` for the operations console.
+
+The frontend can fall back to realistic demo telemetry if the FastAPI service is offline, so the console stays useful for screenshots. For a production-style demo, run both servers.
+
+## API Contracts for the Next.js Frontend
+
+The Next.js dashboard reads from three typed endpoints:
+
+- `GET /dashboard/summary` returns a `DashboardSummaryResponse` (`src/rift/api/schemas.py`) with KPIs, current model metadata, ETL/fairness/drift/federated/audit records, and PR-AUC history.
+- `GET /metrics/latest` returns a `LatestMetricsResponse`. When no trained model is registered the endpoint returns HTTP 200 with `status="empty"` and a `message` that points at `rift train`, instead of a 404.
+- `GET /models/current` returns a `CurrentModelResponse` with the same explicit empty-state pattern.
+
+The dashboard distinguishes three runtime states: `Live` (FastAPI reachable, real data), `Updating` (SWR revalidation in flight), and `Demo telemetry` (FastAPI offline, mock data is rendered so the console remains usable).
 
 ## Verification Commands
 

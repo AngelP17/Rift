@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" role="img" aria-label="Governance report with model card and fairness section">
+  <defs>
+    <linearGradient id="g-gov-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1124"/>
+      <stop offset="100%" stop-color="#070b18"/>
+    </linearGradient>
+    <linearGradient id="g-gov-pill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="rgba(110,168,254,0.2)"/>
+      <stop offset="100%" stop-color="rgba(110,168,254,0.05)"/>
+    </linearGradient>
+  </defs>
+  <rect width="1400" height="900" fill="url(#g-gov-bg)"/>
+
+  <g font-family="ui-monospace, monospace" font-size="11" fill="#9bb6e8" letter-spacing="1.6">
+    <text x="80" y="70">MODEL CARD · run_graphsage_20260502_1148</text>
+  </g>
+
+  <g>
+    <rect x="80" y="100" width="600" height="220" fill="none" stroke="rgba(110,168,254,0.25)"/>
+    <text x="100" y="130" font-family="ui-monospace, monospace" font-size="12" fill="#9bb6e8" letter-spacing="1.4">METRICS</text>
+    <g font-family="ui-monospace, monospace" font-size="14" fill="#f3f6ff">
+      <text x="100" y="170">PR-AUC</text>
+      <text x="320" y="170" fill="#2fbf71">0.912</text>
+      <text x="100" y="200">ECE</text>
+      <text x="320" y="200" fill="#2fbf71">0.031</text>
+      <text x="100" y="230">Brier</text>
+      <text x="320" y="230" fill="#2fbf71">0.087</text>
+      <text x="100" y="260">Recall@1% FPR</text>
+      <text x="320" y="260" fill="#2fbf71">0.472</text>
+      <text x="100" y="290">Coverage</text>
+      <text x="320" y="290" fill="#9bb6e8">93.2%</text>
+    </g>
+    <g font-family="ui-monospace, monospace" font-size="10" fill="#5a78a8">
+      <text x="450" y="170">target ≥ 0.85 · within band</text>
+      <text x="450" y="200">target ≤ 0.05 · within band</text>
+      <text x="450" y="230">target ≤ 0.12 · within band</text>
+      <text x="450" y="260">target ≥ 0.40 · within band</text>
+      <text x="450" y="290">derived from review_rate</text>
+    </g>
+  </g>
+
+  <g>
+    <rect x="80" y="350" width="600" height="180" fill="none" stroke="rgba(243,156,18,0.32)"/>
+    <text x="100" y="380" font-family="ui-monospace, monospace" font-size="12" fill="#f39c12" letter-spacing="1.4">FAIRNESS · CHANNEL</text>
+    <g font-family="ui-monospace, monospace" font-size="13" fill="#f3f6ff">
+      <text x="100" y="410">demographic_parity_difference</text>
+      <text x="560" y="410" fill="#2fbf71" text-anchor="end">0.037</text>
+      <text x="100" y="440">disparate_impact_ratio</text>
+      <text x="560" y="440" fill="#2fbf71" text-anchor="end">0.91</text>
+      <text x="100" y="470">equal_opportunity_difference</text>
+      <text x="560" y="470" fill="#2fbf71" text-anchor="end">0.029</text>
+      <text x="100" y="500">audited_at</text>
+      <text x="560" y="500" fill="#9bb6e8" text-anchor="end">2026-05-01</text>
+    </g>
+  </g>
+
+  <g>
+    <rect x="80" y="560" width="600" height="240" fill="none" stroke="rgba(47,191,113,0.32)"/>
+    <text x="100" y="590" font-family="ui-monospace, monospace" font-size="12" fill="#2fbf71" letter-spacing="1.4">DRIFT</text>
+    <g>
+      <rect x="100" y="620" width="560" height="20" fill="rgba(110,168,254,0.08)"/>
+      <rect x="100" y="620" width="78" height="20" fill="#2fbf71" opacity="0.7"/>
+      <text x="688" y="635" font-family="ui-monospace, monospace" font-size="11" fill="#9bb6e8">0.128 / 0.20</text>
+    </g>
+    <g font-family="ui-monospace, monospace" font-size="13" fill="#f3f6ff">
+      <text x="100" y="680">retrain_triggered</text>
+      <text x="660" y="680" fill="#9bb6e8" text-anchor="end">false</text>
+      <text x="100" y="710">reference_window</text>
+      <text x="660" y="710" fill="#9bb6e8" text-anchor="end">2026-04-25 → 2026-05-02</text>
+      <text x="100" y="740">top_drifted_features</text>
+      <text x="660" y="740" fill="#9bb6e8" text-anchor="end">amount_z, channel_density</text>
+      <text x="100" y="770">next_review</text>
+      <text x="660" y="770" fill="#9bb6e8" text-anchor="end">2026-05-09</text>
+    </g>
+  </g>
+
+  <g>
+    <rect x="720" y="100" width="600" height="700" fill="rgba(110,168,254,0.05)" stroke="rgba(110,168,254,0.2)"/>
+    <text x="740" y="130" font-family="ui-monospace, monospace" font-size="12" fill="#9bb6e8" letter-spacing="1.4">NARRATIVE</text>
+    <g font-family="ui-sans-serif, system-ui" font-size="14" fill="#b6c5e8">
+      <text x="740" y="170">The current graphsage_xgb run continues to</text>
+      <text x="740" y="194">outperform the flat tabular baseline on the</text>
+      <text x="740" y="218">chronological split. Calibration stayed inside</text>
+      <text x="740" y="242">the green band for ECE and Brier, and the</text>
+      <text x="740" y="266">conformal triage band flagged 5.5% of the</text>
+      <text x="740" y="290">scored stream for human review without</text>
+      <text x="740" y="314">spilling into the auto-approve band.</text>
+      <text x="740" y="370">Channel-level fairness was re-checked</text>
+      <text x="740" y="394">against the latest decision window. The</text>
+      <text x="740" y="418">demographic parity difference (0.037) and</text>
+      <text x="740" y="442">disparate impact ratio (0.91) sit inside the</text>
+      <text x="740" y="466">policy band. No remediation was triggered.</text>
+      <text x="740" y="524">Drift on amount_z and channel_density is</text>
+      <text x="740" y="548">moderate but below the retrain threshold.</text>
+      <text x="740" y="572">The next drift window is scheduled for</text>
+      <text x="740" y="596">2026-05-09; no model swap is required now.</text>
+    </g>
+    <g>
+      <rect x="740" y="650" width="200" height="36" fill="url(#g-gov-pill)" stroke="rgba(110,168,254,0.4)"/>
+      <text x="754" y="673" font-family="ui-monospace, monospace" font-size="11" fill="#f3f6ff">export · model_card.md</text>
+    </g>
+    <g>
+      <rect x="960" y="650" width="200" height="36" fill="url(#g-gov-pill)" stroke="rgba(110,168,254,0.4)"/>
+      <text x="974" y="673" font-family="ui-monospace, monospace" font-size="11" fill="#f3f6ff">export · audit_report.md</text>
+    </g>
+  </g>
+</svg>

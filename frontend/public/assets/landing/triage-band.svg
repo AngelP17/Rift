@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Conformal triage band over a distribution">
+  <defs>
+    <linearGradient id="g-band-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a1124"/>
+      <stop offset="100%" stop-color="#070b18"/>
+    </linearGradient>
+    <linearGradient id="g-band-curve" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6ea8fe" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#6ea8fe" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="g-band-mid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f39c12" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#f39c12" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="g-band-high" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e74c3c" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#e74c3c" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#g-band-bg)"/>
+
+  <g stroke="rgba(110,168,254,0.05)" stroke-width="1">
+    <line x1="80" y1="160" x2="1120" y2="160"/>
+    <line x1="80" y1="280" x2="1120" y2="280"/>
+    <line x1="80" y1="400" x2="1120" y2="400"/>
+    <line x1="80" y1="520" x2="1120" y2="520"/>
+    <line x1="80" y1="640" x2="1120" y2="640"/>
+  </g>
+
+  <g>
+    <path d="M 80 600 C 220 580 320 540 420 460 C 520 380 620 300 720 250 C 820 210 900 220 1000 240 L 1120 240 L 1120 720 L 80 720 Z" fill="url(#g-band-curve)" opacity="0.7"/>
+    <path d="M 720 250 C 820 210 900 220 1000 240 L 1120 240 L 1120 720 L 720 720 Z" fill="url(#g-band-mid)" opacity="0.7"/>
+    <path d="M 900 200 C 1000 180 1080 190 1120 200 L 1120 720 L 900 720 Z" fill="url(#g-band-high)" opacity="0.7"/>
+    <path d="M 80 600 C 220 580 320 540 420 460 C 520 380 620 300 720 250 C 820 210 900 220 1000 240 L 1120 240" fill="none" stroke="#6ea8fe" stroke-width="2.2"/>
+  </g>
+
+  <g font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.6" fill="#9bb6e8">
+    <text x="80" y="120">CONFORMAL TRIAGE · 3 BANDS</text>
+    <text x="80" y="700" fill="#5a78a8">low risk · medium · high</text>
+  </g>
+
+  <g font-family="ui-monospace, monospace" font-size="12">
+    <g transform="translate(140,540)">
+      <rect width="200" height="40" fill="rgba(110,168,254,0.18)" stroke="rgba(110,168,254,0.4)"/>
+      <text x="14" y="25" fill="#f3f6ff">AUTO_APPROVE 78.4%</text>
+    </g>
+    <g transform="translate(560,360)">
+      <rect width="220" height="40" fill="rgba(243,156,18,0.18)" stroke="rgba(243,156,18,0.45)"/>
+      <text x="14" y="25" fill="#f3f6ff">ANALYST_REVIEW 16.1%</text>
+    </g>
+    <g transform="translate(900,200)">
+      <rect width="200" height="40" fill="rgba(231,76,60,0.22)" stroke="rgba(231,76,60,0.55)"/>
+      <text x="14" y="25" fill="#f3f6ff">BLOCK 5.5%</text>
+    </g>
+  </g>
+</svg>

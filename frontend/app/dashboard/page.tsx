@@ -9,6 +9,7 @@ import { DataTable } from "@/components/dashboard/data-table";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { OperationsBreakdownChart } from "@/components/dashboard/operations-breakdown-chart";
 import { PerformanceTrendChart } from "@/components/dashboard/performance-trend-chart";
+import { StatePanel } from "@/components/shared/state-panel";
 import { useDashboardSummary, useMetrics } from "@/hooks/use-dashboard-data";
 import { DashboardSummary } from "@/lib/api";
 import { cn, formatDecimal, formatNumber, formatPercent, relativeTime, titleCase } from "@/lib/utils";
@@ -53,7 +54,12 @@ function useTables(summary?: DashboardSummary) {
         title: "Latest ETL Runs",
         subtitle: "Sortable lineage records from the ETL pipeline.",
         data: summary?.etl_runs ?? [],
-        columns: makeColumns(["run_id", "source_system", "rows_valid", "rows_invalid", "duplicates_removed"])
+        columns: makeColumns(["run_id", "source_system", "rows_valid", "rows_invalid", "duplicates_removed"]),
+        emptyState: {
+          title: "No ETL runs yet",
+          description: "Run the auditable ETL on a CSV, JSON, or Parquet source to populate lineage, validation, and dedup records.",
+          command: "rift etl run --source <path> --source-system <name> --dataset-name <id>"
+        }
       },
       {
         title: "Recent Fairness Audits",
@@ -64,25 +70,45 @@ function useTables(summary?: DashboardSummary) {
           "sensitive_column",
           "demographic_parity_difference",
           "disparate_impact_ratio"
-        ])
+        ]),
+        emptyState: {
+          title: "No fairness audits yet",
+          description: "Score a labeled dataset with the current model and group outcomes by a sensitive column such as channel or region.",
+          command: "rift fairness audit --sensitive-column channel"
+        }
       },
       {
         title: "Recent Drift Reports",
         subtitle: "Monitor distribution drift and automatic retrain triggers.",
         data: summary?.drift_reports ?? [],
-        columns: makeColumns(["report_id", "drift_score", "is_drift", "retrain_triggered"])
+        columns: makeColumns(["report_id", "drift_score", "is_drift", "retrain_triggered"]),
+        emptyState: {
+          title: "No drift reports yet",
+          description: "Compare a reference snapshot to the current data using the local drift detector. Threshold crossings can trigger retraining.",
+          command: "rift monitor drift --reference-path <ref> --current-path <cur>"
+        }
       },
       {
         title: "Federated Training Runs",
         subtitle: "Client-aware round summaries for collaborative training.",
         data: summary?.federated_runs ?? [],
-        columns: makeColumns(["run_id", "client_column", "client_count", "rounds"])
+        columns: makeColumns(["run_id", "client_column", "client_count", "rounds"]),
+        emptyState: {
+          title: "No federated runs yet",
+          description: "Run the local FedAvg-style simulator to partition the dataset by a client column and aggregate per-round metrics.",
+          command: "rift federated train --client-column channel --rounds 3"
+        }
       },
       {
         title: "Prepared Public Datasets",
         subtitle: "Canonicalized datasets ready for ETL and model evaluation.",
         data: preparedDatasets,
-        columns: makeColumns(["dataset_id", "adapter", "rows_prepared", "auto_etl_run_id"])
+        columns: makeColumns(["dataset_id", "adapter", "rows_prepared", "auto_etl_run_id"]),
+        emptyState: {
+          title: "No prepared datasets yet",
+          description: "Use a public dataset adapter to normalize, validate, and stage rows for ETL and model evaluation.",
+          command: "rift dataset prepare --adapter ieee_cis --source <path>"
+        }
       },
       {
         title: "Recent Audit Decisions",
@@ -94,7 +120,12 @@ function useTables(summary?: DashboardSummary) {
           "decision",
           "calibrated_probability",
           "confidence"
-        ])
+        ]),
+        emptyState: {
+          title: "No audit decisions yet",
+          description: "Score a transaction with the current model run. Every decision is recorded with payload, features, and a deterministic hash.",
+          command: "rift predict --tx <path>"
+        }
       }
     ];
   }, [summary]);
@@ -132,28 +163,28 @@ export default function DashboardPage() {
     {
       label: "PR-AUC",
       value: Number(metrics?.pr_auc ?? 0),
-      detail: "Target above 85% with graph-aware lift over flat tabular baselines.",
+      detail: "Higher is better. Tracks the precision-recall lift the hybrid model keeps over a flat tabular baseline.",
       tone: statusTone(Number(metrics?.pr_auc ?? 0), 0.85, "up"),
       formatter: (value: number) => formatPercent(value, 1)
     },
     {
       label: "Expected Calibration Error",
       value: Number(metrics?.ece ?? 0),
-      detail: "Lower is better. Tracks how closely probabilities reflect observed fraud rates.",
+      detail: "Lower is better. Measures how closely the calibrated probability reflects the observed fraud rate.",
       tone: statusTone(Number(metrics?.ece ?? 0), 0.05, "down"),
       formatter: (value: number) => formatDecimal(value)
     },
     {
       label: "Brier Score",
       value: Number(metrics?.brier ?? 0),
-      detail: "Quadratic scoring penalty for calibration and confidence quality.",
+      detail: "Lower is better. Quadratic penalty for confidence and calibration quality on the latest run.",
       tone: statusTone(Number(metrics?.brier ?? 0), 0.12, "down"),
       formatter: (value: number) => formatDecimal(value)
     },
     {
       label: "Coverage",
       value: coverage,
-      detail: "Approximate non-review coverage derived from the current review rate.",
+      detail: "Approximate share of decisions that do not require an analyst, derived from the current review rate.",
       tone: statusTone(coverage, 0.95, "up"),
       formatter: (value: number) => formatPercent(value, 1)
     },
@@ -167,18 +198,24 @@ export default function DashboardPage() {
     {
       label: "Drift Reports",
       value: Number(summary?.kpis.drift_reports ?? 0),
-      detail: "Distribution shifts tracked against the active reference window.",
+      detail: "Distribution shifts tracked against the active reference window. Threshold crossings can trigger retraining.",
       tone: Number(summary?.kpis.drift_reports ?? 0) > 0 ? "warn" : "neutral",
       formatter: (value: number) => formatNumber(Math.round(value))
     },
     {
       label: "Recorded Audits",
       value: Number(summary?.kpis.recent_audits ?? 0),
-      detail: "Replayable decisions with markdown and JSON payloads in the audit store.",
+      detail: "Replayable decisions with markdown and JSON payloads stored in the local DuckDB audit ledger.",
       tone: "neutral",
       formatter: (value: number) => formatNumber(Math.round(value))
     }
   ];
+
+  const showNoModelState =
+    !usesDemoData &&
+    !summaryQuery.isLoading &&
+    summary?.current_model === null &&
+    summary?.current_metrics === null;
 
   return (
     <main className="min-h-[100dvh] px-4 py-5 text-ink md:px-6 xl:px-8">
@@ -230,20 +267,33 @@ export default function DashboardPage() {
                   <span
                     className={cn(
                       "inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs",
-                      summaryQuery.isValidating || metricsQuery.isValidating
+                      usesDemoData
+                        ? "bg-amber-400/10 text-amber-300"
+                        : summaryQuery.isValidating || metricsQuery.isValidating
                         ? "bg-accent/10 text-accent"
                         : "bg-emerald-400/10 text-emerald-300"
                     )}
                   >
-                    <ArrowsClockwise className={cn("h-3 w-3", summaryQuery.isValidating || metricsQuery.isValidating ? "animate-spin" : "")} />
-                    {summaryQuery.isValidating || metricsQuery.isValidating ? "Updating" : "Live"}
+                    <ArrowsClockwise
+                      className={cn(
+                        "h-3 w-3",
+                        summaryQuery.isValidating || metricsQuery.isValidating ? "animate-spin" : ""
+                      )}
+                    />
+                    {usesDemoData
+                      ? "Demo telemetry"
+                      : summaryQuery.isValidating || metricsQuery.isValidating
+                      ? "Updating"
+                      : "Live"}
                   </span>
                 </div>
                 <div className="mt-3 text-sm text-ink">
                   {summary?.refreshed_at ? `Snapshot ${relativeTime(summary.refreshed_at)}` : "Waiting for API response"}
                 </div>
                 <div className="mt-2 text-sm text-muted">
-                  {usesDemoData ? "Demo telemetry is active until the FastAPI service is connected." : "Connected to the FastAPI service."}
+                  {usesDemoData
+                    ? "FastAPI not reachable. Realistic demo data is rendered so the console stays useful for screenshots."
+                    : "Connected to the FastAPI service."}
                 </div>
               </div>
             </div>
@@ -255,6 +305,23 @@ export default function DashboardPage() {
             <KpiCard key={kpi.label} delay={index * 0.04} {...kpi} />
           ))}
         </section>
+
+        {showNoModelState ? (
+          <section className="mb-6">
+            <StatePanel
+              title="No trained model is registered yet"
+              description="Run a training pass to register a model, persist metrics under .rift/runs/, and unlock replay, model card, and audit exports."
+              tone="empty"
+            >
+              <code className="rounded-full border border-white/10 bg-slate-950/80 px-3 py-1 font-mono text-xs text-ink">
+                rift generate --txns 5000 --users 500 --merchants 120 --fraud-rate 0.03
+              </code>
+              <code className="rounded-full border border-white/10 bg-slate-950/80 px-3 py-1 font-mono text-xs text-ink">
+                rift train --model graphsage_xgb --time-split
+              </code>
+            </StatePanel>
+          </section>
+        ) : null}
 
         <section className="mb-6 grid gap-5 xl:grid-cols-[1.25fr,0.95fr]">
           <PerformanceTrendChart data={summary?.run_history ?? []} />
@@ -302,6 +369,7 @@ export default function DashboardPage() {
             <DataTable
               columns={table.columns}
               data={table.data as DashboardRow[]}
+              emptyState={table.emptyState}
               key={table.title}
               subtitle={table.subtitle}
               title={table.title}

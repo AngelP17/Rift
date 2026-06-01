@@ -26,6 +26,11 @@ from rift.replay.replayer import replay_decision
 from rift.storage.backends import get_storage_backend
 from rift.utils.config import get_paths
 from rift.utils.io import read_json
+from rift.api.schemas import (
+    CurrentModelResponse,
+    DashboardSummaryResponse,
+    LatestMetricsResponse,
+)
 
 
 app = FastAPI(title="Rift API", version="1.0.0")
@@ -131,18 +136,74 @@ def audit(decision_id: str) -> dict:
     return result["report"]
 
 
-@app.get("/metrics/latest")
-def metrics_latest() -> dict:
+@app.get("/metrics/latest", response_model=LatestMetricsResponse)
+def metrics_latest() -> LatestMetricsResponse:
+    """Get metrics for the latest trained model.
+
+    Returns an explicit empty state (HTTP 200, `status="empty"`) when no
+    trained model is registered yet, so the dashboard can render a clear
+    empty state without treating the missing model as an error.
+    """
     paths = get_paths()
-    current = read_json(paths.runs_dir / "current_run.json")
-    return read_json(paths.runs_dir / current["run_id"] / "metrics.json")
+    current_run_path = paths.runs_dir / "current_run.json"
+    if not current_run_path.exists():
+        return LatestMetricsResponse(
+            status="empty",
+            metrics={},
+            message="No trained model is registered yet. Run `rift train` to generate metrics.",
+        )
+    current = read_json(current_run_path)
+    run_id = current.get("run_id")
+    metrics_path = paths.runs_dir / run_id / "metrics.json"
+    if not metrics_path.exists():
+        return LatestMetricsResponse(
+            status="empty",
+            run_id=run_id,
+            metrics={},
+            message="Current run metadata is missing metrics. Re-run `rift train` to regenerate them.",
+        )
+    payload = read_json(metrics_path)
+    metrics = payload.get("metrics", {}) if isinstance(payload, dict) else {}
+    return LatestMetricsResponse(
+        status="ok",
+        run_id=run_id,
+        artifact_path=current.get("artifact_path"),
+        model_type=payload.get("model_type") if isinstance(payload, dict) else None,
+        metrics=metrics,
+    )
 
 
-@app.get("/models/current")
-def current_model() -> dict:
+@app.get("/models/current", response_model=CurrentModelResponse)
+def current_model() -> CurrentModelResponse:
+    """Get info about the currently deployed model.
+
+    Returns an explicit empty state when no model is registered so the
+    dashboard can distinguish "no model yet" from "request failed".
+    """
     paths = get_paths()
-    current = read_json(paths.runs_dir / "current_run.json")
-    return {"run_id": current["run_id"], "artifact_path": current["artifact_path"]}
+    current_run_path = paths.runs_dir / "current_run.json"
+    if not current_run_path.exists():
+        return CurrentModelResponse(
+            status="empty",
+            message="No trained model is registered yet. Run `rift train` to register one.",
+        )
+    current = read_json(current_run_path)
+    run_id = current.get("run_id")
+    metrics_path = paths.runs_dir / run_id / "metrics.json"
+    model_type = None
+    version = None
+    if metrics_path.exists():
+        payload = read_json(metrics_path)
+        if isinstance(payload, dict):
+            model_type = payload.get("model_type")
+            version = payload.get("version")
+    return CurrentModelResponse(
+        status="ok",
+        run_id=run_id,
+        model_type=model_type,
+        version=version,
+        artifact_path=current.get("artifact_path"),
+    )
 
 
 @app.get("/etl/status")
@@ -177,9 +238,10 @@ def natural_query(natural: str) -> dict:
 
 # ── Dashboard routes ──────────────────────────────────────────────
 
-@app.get("/dashboard/summary")
-def dashboard_summary_json() -> dict:
-    return dashboard_snapshot(get_paths())
+@app.get("/dashboard/summary", response_model=DashboardSummaryResponse)
+def dashboard_summary_json() -> DashboardSummaryResponse:
+    """Return the full operational snapshot as a typed JSON response."""
+    return DashboardSummaryResponse.model_validate(dashboard_snapshot(get_paths()))
 
 
 @app.get("/dashboard", response_class=HTMLResponse)

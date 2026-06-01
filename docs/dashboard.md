@@ -197,12 +197,14 @@ Each table shows guided empty states with CLI commands when no records exist.
 
 The `frontend/` directory contains an optional React-based dashboard built with:
 
-- **Next.js 14** with App Router
-- **Tailwind CSS** for styling
-- **Recharts** for performance trend and operations breakdown charts
-- **GSAP + ScrollTrigger** for landing page scroll choreography
-- **Phosphor Icons** for consistent iconography
-- **Animated number components** for KPI transitions
+- **Next.js 14** with App Router, `next/font` for Outfit and JetBrains Mono.
+- **Tailwind CSS** for styling.
+- **Recharts** for performance trend and operations breakdown charts.
+- **GSAP + ScrollTrigger** for landing page scroll choreography.
+- **Phosphor Icons** for consistent iconography.
+- **TanStack Table** for sortable, filterable operational tables.
+- **SWR** for typed data fetching with explicit empty-state fallbacks.
+- **Animated number components** for KPI transitions.
 
 To run:
 
@@ -214,35 +216,52 @@ npm run dev
 
 The frontend connects to the same FastAPI backend at `http://localhost:8000`. When the backend is offline, realistic demo telemetry is used as fallback data so the dashboard remains populated for screenshots and demo walkthroughs. This fallback is a preview aid; production use should connect the API and treat `/dashboard/summary` and `/metrics/latest` as the source of truth.
 
-To verify:
+The console distinguishes three runtime states in the top-right card:
 
-```bash
-cd frontend
-npm run lint
-npm run build
-```
+- **Live** — FastAPI reachable, snapshot rendered from the live API.
+- **Updating** — SWR revalidation is in flight, no action required.
+- **Demo telemetry** — FastAPI offline, mock data is rendered so the console remains usable. Treat as a preview only.
+
+When the API responds with the new explicit empty states (`status="empty"` on `/metrics/latest` or `/models/current`), the dashboard surfaces a guided `StatePanel` near the KPI grid that names the missing artifact and points at the matching CLI command (`rift train`, `rift predict`, etc.).
 
 ### Visual QA Gates
 
 Use these gates for future landing-page or dashboard presentation work:
 
 - Keep the first viewport readable on a small laptop: short hero copy, clear CTA, and no crowded card stacks above the fold.
-- Preserve the current image-led landing direction with large section-specific imagery and stable media frames.
+- Preserve the current image-led landing direction with large section-specific imagery and stable media frames. All section imagery lives in `frontend/public/assets/landing/` as authored SVG so it can render offline.
 - Keep `GSAP` and `ScrollTrigger` interactions real and purposeful; avoid decorative motion that hides content or creates horizontal scroll.
 - Bento grids should keep `grid-flow-dense` and span math that avoids intentional empty cells.
 - Avoid cheap meta labels, fake technical pills, excessive microcopy, nested cards, and giant wrapper panels unless they materially clarify the workflow.
 - Verify button contrast in both light and dark CTA areas.
 - Keep fallback demo telemetry realistic and populated when the FastAPI backend is offline, but do not show a large warning banner in screenshots.
+- Honour `prefers-reduced-motion`: GSAP, marquee, and Framer Motion entrance animations should degrade cleanly.
 
 Cheap/meta patterns to remove:
 
 - Decorative section markers, fake runtime tags, ornamental status chips, and brand-style labels that do not map to real product state.
 - Unsupported README badges or claims that are not backed by current CI output.
 - Repeated pill rows where plain text, table labels, or icon buttons would be clearer.
+- Picsum or other third-party placeholder URLs in committed code.
 
 Acceptable operational labels:
 
 - Labels that identify actual data, routes, filters, chart series, refresh state, API availability, audit lineage, or model/governance metadata.
+
+### Frontend Empty States
+
+Each dashboard table receives a contextual `emptyState` prop that renders a title, plain description, and the matching CLI command. Current copy:
+
+| Table | When empty | CLI hint |
+|---|---|---|
+| Latest ETL Runs | No rows | `rift etl run --source <path> --source-system <name> --dataset-name <id>` |
+| Recent Fairness Audits | No rows | `rift fairness audit --sensitive-column channel` |
+| Recent Drift Reports | No rows | `rift monitor drift --reference-path <ref> --current-path <cur>` |
+| Federated Training Runs | No rows | `rift federated train --client-column channel --rounds 3` |
+| Prepared Public Datasets | No rows | `rift dataset prepare --adapter ieee_cis --source <path>` |
+| Recent Audit Decisions | No rows | `rift predict --tx <path>` |
+
+Use the same pattern when adding new tables.
 
 ## Customization
 

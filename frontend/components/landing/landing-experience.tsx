@@ -24,35 +24,35 @@ const bentoCards = [
     title: "Device farms become neighborhoods",
     body: "Shared devices, account reuse, merchant clusters, and temporal links stay visible as connected evidence instead of disappearing into flat tables.",
     className: "md:col-span-5",
-    image: "https://picsum.photos/seed/rift-graph-topology/1200/800",
+    image: "/assets/landing/graph-topology.svg",
     icon: Graph
   },
   {
     title: "Every score leaves a receipt",
     body: "Feature inputs, calibrated probabilities, model run metadata, and durable hashes travel together through the review path.",
     className: "md:col-span-4",
-    image: "https://picsum.photos/seed/rift-audit-ledger/1200/800",
+    image: "/assets/landing/audit-ledger.svg",
     icon: LockKey
   },
   {
     title: "Uncertainty gets routed",
     body: "Conformal bands separate low-risk approvals from cases that deserve a human analyst before money moves.",
     className: "md:col-span-3",
-    image: "https://picsum.photos/seed/rift-analyst-desk/1200/800",
+    image: "/assets/landing/triage-band.svg",
     icon: WarningDiamond
   },
   {
     title: "Governance is not a PDF afterthought",
     body: "Model cards, fairness audits, drift reports, and markdown exports are generated from the same local evidence store.",
     className: "md:col-span-7",
-    image: "https://picsum.photos/seed/rift-governance-review/1400/900",
+    image: "/assets/landing/governance-card.svg",
     icon: ShieldCheck
   },
   {
     title: "Local stack, serious posture",
     body: "DuckDB, Polars, FastAPI, and Next.js run without managed services, while still feeling like an investigation-grade console.",
     className: "md:col-span-5",
-    image: "https://picsum.photos/seed/rift-local-control-room/1200/900",
+    image: "/assets/landing/local-stack.svg",
     icon: Database
   }
 ];
@@ -65,7 +65,7 @@ const scrollItems = [
   },
   {
     title: "Calibrate before decisions",
-    body: "Platt and isotonic calibration keep probabilities aligned with observed outcomes before anything reaches an analyst.",
+    body: "Isotonic and Platt calibration keep probabilities aligned with observed outcomes before anything reaches an analyst.",
     metric: "3.1% expected calibration error"
   },
   {
@@ -81,17 +81,17 @@ const evidenceLanes = [
   {
     title: "Ingest",
     body: "Bronze, silver, and gold ETL snapshots keep source lineage attached.",
-    image: "https://picsum.photos/seed/rift-ledger-ingest/900/700"
+    image: "/assets/landing/lane-ingest.svg"
   },
   {
     title: "Score",
     body: "Graph embeddings and tabular features meet before calibration.",
-    image: "https://picsum.photos/seed/rift-model-score/900/700"
+    image: "/assets/landing/lane-score.svg"
   },
   {
     title: "Replay",
     body: "Every reviewer decision can be reconstructed from local artifacts.",
-    image: "https://picsum.photos/seed/rift-audit-replay/900/700"
+    image: "/assets/landing/lane-replay.svg"
   }
 ];
 
@@ -202,8 +202,9 @@ export function LandingExperience() {
       <section className="relative min-h-[100dvh] px-4 pb-20 pt-32 md:px-8 md:pb-28 md:pt-40">
         <div className="absolute inset-0 -z-0">
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-45 grayscale contrast-125"
-            style={{ backgroundImage: "url(https://picsum.photos/seed/rift-forensic-command-wall/1920/1080)" }}
+            aria-hidden="true"
+            className="absolute inset-0 bg-cover bg-center opacity-50"
+            style={{ backgroundImage: "url(/assets/landing/forensic-wall.svg)" }}
           />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(110,168,254,0.32),transparent_30%),radial-gradient(circle_at_84%_18%,rgba(47,191,113,0.2),transparent_27%),linear-gradient(135deg,rgba(8,13,27,0.9),rgba(3,7,18,0.98))]" />
           <div className="absolute inset-x-0 top-28 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
@@ -221,8 +222,9 @@ export function LandingExperience() {
               >
                 Make fraud decisions{" "}
                 <span
-                  className="mx-2 inline-block h-10 w-28 rounded-full bg-cover bg-center align-middle grayscale contrast-125 md:h-12 md:w-36"
-                  style={{ backgroundImage: "url(https://picsum.photos/seed/rift-inline-ledger/600/300)" }}
+                  aria-hidden="true"
+                  className="mx-2 inline-block h-10 w-28 rounded-full bg-cover bg-center align-middle md:h-12 md:w-36"
+                  style={{ backgroundImage: "url(/assets/landing/inline-hash.svg)" }}
                 />{" "}
                 replayable.
               </h1>
@@ -250,8 +252,8 @@ export function LandingExperience() {
               <div className="glass-edge relative overflow-hidden rounded-[2rem] bg-slate-950/72 p-4 backdrop-blur-2xl">
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-cover bg-center opacity-25 grayscale contrast-125"
-                  style={{ backgroundImage: "url(https://picsum.photos/seed/rift-transaction-map/1400/1100)" }}
+                  className="absolute inset-0 bg-cover bg-center opacity-30"
+                  style={{ backgroundImage: "url(/assets/landing/transaction-map.svg)" }}
                 />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_65%_20%,rgba(110,168,254,0.28),transparent_30%),linear-gradient(135deg,rgba(15,23,42,0.92),rgba(2,6,23,0.94))]" />
                 <div className="relative grid min-h-[560px] content-between gap-5">

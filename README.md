@@ -156,7 +156,9 @@ npm install
 npm run dev
 ```
 
-Then visit `http://localhost:3000` for the landing page or `http://localhost:3000/dashboard` for the React operations console. The production path should connect to the FastAPI backend at `http://localhost:8000`; when that backend is not running, the console quietly uses realistic local demo telemetry so screenshots and demos stay populated.
+Then visit `http://localhost:3000` for the landing page or `http://localhost:3000/dashboard` for the React operations console. The production path should connect to the FastAPI backend at `http://localhost:8000`; when that backend is not running, the console quietly uses realistic local demo telemetry so screenshots and demos stay populated. The console top-right card distinguishes three runtime states: `Live`, `Updating`, and `Demo telemetry`.
+
+When the API responds with an explicit empty state (no model registered yet), the dashboard surfaces a guided `StatePanel` near the KPI grid that names the missing artifact and points at the matching CLI command (`rift train`, `rift predict`, etc.).
 
 Note: the local Docker stack maps Grafana to `localhost:3000`, which conflicts with the default Next.js dev server port. If Grafana is already running, start Next.js on another port with `npm run dev -- --port 3001`.
 

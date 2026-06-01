@@ -19,13 +19,19 @@ type DataTableProps<TData extends Record<string, unknown>> = {
   subtitle: string;
   data: TData[];
   columns: ColumnDef<TData>[];
+  emptyState?: {
+    title: string;
+    description: string;
+    command?: string;
+  };
 };
 
 export function DataTable<TData extends Record<string, unknown>>({
   title,
   subtitle,
   data,
-  columns
+  columns,
+  emptyState
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [search, setSearch] = useState("");
@@ -124,7 +130,19 @@ export function DataTable<TData extends Record<string, unknown>>({
             </tbody>
           </table>
           {!table.getRowModel().rows.length ? (
-            <div className="px-4 py-12 text-center text-sm text-muted">No rows matched the current filter.</div>
+            data.length === 0 && emptyState ? (
+              <div className="flex flex-col items-start gap-3 px-6 py-10">
+                <p className="text-sm font-semibold text-ink">{emptyState.title}</p>
+                <p className="max-w-2xl text-sm leading-6 text-muted">{emptyState.description}</p>
+                {emptyState.command ? (
+                  <code className="rounded-full border border-white/10 bg-slate-950/80 px-3 py-1 font-mono text-xs text-ink">
+                    {emptyState.command}
+                  </code>
+                ) : null}
+              </div>
+            ) : (
+              <div className="px-4 py-12 text-center text-sm text-muted">No rows matched the current filter.</div>
+            )
           ) : null}
         </div>
       </section>

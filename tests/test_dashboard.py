@@ -150,3 +150,91 @@ class TestApiRoutes:
         assert response.status_code == 200
         data = response.json()
         assert "kpis" in data
+        assert data["kpis"]["etl_runs"] == 0
+        assert data["current_model"] is None
+        assert data["current_metrics"] is None
+
+
+class TestEmptyStateApiRoutes:
+    def test_metrics_latest_returns_empty_state_when_no_model(self, tmp_path: Path):
+        _paths(tmp_path)
+        from fastapi.testclient import TestClient
+        from rift.api.server import app
+
+        client = TestClient(app)
+        response = client.get("/metrics/latest")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "empty"
+        assert body["metrics"] == {}
+        assert body["run_id"] is None
+        assert "rift train" in (body["message"] or "").lower()
+
+    def test_models_current_returns_empty_state_when_no_model(self, tmp_path: Path):
+        _paths(tmp_path)
+        from fastapi.testclient import TestClient
+        from rift.api.server import app
+
+        client = TestClient(app)
+        response = client.get("/models/current")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "empty"
+        assert body["run_id"] is None
+        assert "rift train" in (body["message"] or "").lower()
+
+    def test_metrics_latest_returns_empty_state_when_run_metadata_present_but_metrics_missing(
+        self, tmp_path: Path
+    ):
+        paths = _paths(tmp_path)
+        runs_dir = paths.runs_dir
+        run_id = "run_test_metrics"
+        (runs_dir / run_id).mkdir(parents=True, exist_ok=True)
+        import json
+
+        (runs_dir / "current_run.json").write_text(
+            json.dumps({"run_id": run_id, "artifact_path": f"artifacts/{run_id}.pkl"})
+        )
+
+        from fastapi.testclient import TestClient
+        from rift.api.server import app
+
+        client = TestClient(app)
+        response = client.get("/metrics/latest")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "empty"
+        assert body["run_id"] == run_id
+        assert body["metrics"] == {}
+
+    def test_models_current_returns_metadata_when_current_run_present(self, tmp_path: Path):
+        paths = _paths(tmp_path)
+        runs_dir = paths.runs_dir
+        run_id = "run_test_model"
+        (runs_dir / run_id).mkdir(parents=True, exist_ok=True)
+        import json
+
+        (runs_dir / "current_run.json").write_text(
+            json.dumps({"run_id": run_id, "artifact_path": f"artifacts/{run_id}.pkl"})
+        )
+        (runs_dir / run_id / "metrics.json").write_text(
+            json.dumps(
+                {
+                    "model_type": "graphsage_xgb",
+                    "version": "0.4.2",
+                    "metrics": {"pr_auc": 0.91},
+                }
+            )
+        )
+
+        from fastapi.testclient import TestClient
+        from rift.api.server import app
+
+        client = TestClient(app)
+        response = client.get("/models/current")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "ok"
+        assert body["run_id"] == run_id
+        assert body["model_type"] == "graphsage_xgb"
+        assert body["version"] == "0.4.2"
