@@ -13,13 +13,6 @@ Dashboard (live, FastAPI connected):
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
-Dashboard in demo telemetry mode (FastAPI offline, mock fallback):
-
-![Dashboard demo telemetry](docs/screenshots/dashboard-demo-telemetry.png)
-
-Mobile dashboard:
-
-![Dashboard mobile](docs/screenshots/dashboard-mobile.png)
 
 Reduced-motion landing (a11y verification):
 
